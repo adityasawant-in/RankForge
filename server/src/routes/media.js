@@ -154,9 +154,7 @@ async function downloadViaCobalt(url, outputPath) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      url: url,
-      videoQuality: "720",
-      downloadMode: "video"
+      url: url
     })
   });
 
