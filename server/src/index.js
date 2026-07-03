@@ -38,6 +38,21 @@ if (fs.existsSync(oldUploadsDir)) {
   }
 }
 
+import { execSync } from "child_process";
+try {
+  const nodeVer = execSync("node -v").toString().trim();
+  console.log(`[DIAGNOSTIC] Global node: ${nodeVer}`);
+} catch (err) {
+  console.error(`[DIAGNOSTIC] Global node check failed: ${err.message}`);
+}
+try {
+  const nodePath = execSync("which node").toString().trim();
+  console.log(`[DIAGNOSTIC] which node: ${nodePath}`);
+} catch (err) {
+  console.error(`[DIAGNOSTIC] which node failed: ${err.message}`);
+}
+console.log(`[DIAGNOSTIC] process.execPath: ${process.execPath}`);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
