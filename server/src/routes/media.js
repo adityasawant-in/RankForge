@@ -145,6 +145,46 @@ function runYtDlp(args) {
   });
 }
 
+async function downloadViaCobalt(url, outputPath) {
+  console.log(`[COBALT] Attempting direct download for: ${url}`);
+  const response = await fetch("https://api.cobalt.tools/api/json", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      url: url,
+      videoQuality: "720",
+      downloadMode: "video"
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cobalt API failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (data.status === "error") {
+    throw new Error(data.text || "Cobalt API returned error status");
+  }
+
+  const streamUrl = data.url;
+  if (!streamUrl) {
+    throw new Error("Cobalt API did not return a stream URL");
+  }
+
+  console.log(`[COBALT] Downloading stream from: ${streamUrl}`);
+  const fileRes = await fetch(streamUrl);
+  if (!fileRes.ok) {
+    throw new Error(`Failed to download stream from Cobalt: ${fileRes.statusText}`);
+  }
+
+  const buffer = await fileRes.arrayBuffer();
+  fs.writeFileSync(outputPath, Buffer.from(buffer));
+  console.log(`[COBALT] Download completed successfully via Cobalt to: ${outputPath}`);
+}
+
 function downloadVideo(url, outputPath) {
   return new Promise(async (resolve, reject) => {
     const cookieSources = (process.platform === "win32")
@@ -172,7 +212,14 @@ function downloadVideo(url, outputPath) {
       }
     }
 
-    reject(new Error(`Failed to download video from URL. Error: ${lastError?.message}`));
+    // Fall back to Cobalt API if yt-dlp fails
+    console.warn(`[DOWNLOAD] yt-dlp failed: ${lastError?.message}. Falling back to Cobalt API...`);
+    try {
+      await downloadViaCobalt(url, outputPath);
+      resolve();
+    } catch (cobaltErr) {
+      reject(new Error(`Failed to download video. yt-dlp error: ${lastError?.message || "unknown"}. Cobalt error: ${cobaltErr.message}`));
+    }
   });
 }
 
