@@ -6,6 +6,15 @@ import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import { nanoid } from "nanoid";
 import ffmpegPath from "ffmpeg-static";
+import { Readable } from "stream";
+import { finished } from "stream/promises";
+
+async function downloadFile(url, destPath) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to download ${url}: ${res.statusText}`);
+  const fileStream = fs.createWriteStream(destPath);
+  await finished(Readable.fromWeb(res.body).pipe(fileStream));
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
@@ -309,77 +318,100 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
   const rankOverlayFilters = rankDrawFilters.join(",");
 
   if (asset) {
-    const videoPath = asset.url.startsWith("http")
+    let videoPath = asset.url.startsWith("http")
       ? asset.url
       : path.join(VIDEO_DATA_DIR, path.basename(asset.url));
-    if (!videoPath.startsWith("http") && !fs.existsSync(videoPath)) {
+
+    let downloadedTempFile = null;
+    if (videoPath.startsWith("http")) {
+      const assetId = nanoid(6);
+      const runTempDir = path.dirname(tempOut);
+      downloadedTempFile = path.join(runTempDir, `input_${assetId}.mp4`);
+      console.log(`[EXPORT] Downloading video asset to local disk to save memory: ${videoPath}`);
+      await downloadFile(videoPath, downloadedTempFile);
+      videoPath = downloadedTempFile;
+    } else if (!fs.existsSync(videoPath)) {
       throw new Error(`Video file not found: ${videoPath}`);
     }
 
-    const backdropOp = project.backdropOpacity !== undefined ? project.backdropOpacity : 45;
-    const overlayDarkness = (100 - backdropOp) / 100;
-    const blurSize = Math.max(1, project.backdropBlur !== undefined ? project.backdropBlur : 20);
-
-    const speed = block.playbackSpeed !== undefined ? block.playbackSpeed : 1.0;
-    const inputDuration = duration * speed;
-    const setptsVal = (1 / speed).toFixed(4);
-    const videoFilter = speed !== 1.0 ? `,setpts=${setptsVal}*PTS` : "";
-
-    const drawTextChain = [drawBanners, drawTitle, drawSub, rankOverlayFilters].filter(Boolean).join(",");
-    const filterComplex = emojiFilterChain
-      ? `[0:v]split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=${blurSize}:2,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v_drawn];${emojiFilterChain}[v]`
-      : `[0:v]split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=${blurSize}:2,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v]`;
-
-    const audioArgs = speed !== 1.0 ? ["-af", getAtempoFilter(speed)] : [];
-
     try {
-      // Attempt using original audio
-      const args = [
-        "-y",
-        "-ss", String(trimStart),
-        "-t", String(inputDuration),
-        "-tls_verify", "0",
-        "-i", videoPath,
-        "-filter_complex", filterComplex,
-        "-map", "[v]",
-        "-map", "0:a",
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        ...audioArgs,
-        "-ar", "44100",
-        "-ac", "2",
-        "-r", "30",
-        "-shortest",
-        tempOut
-      ];
-      await runFfmpeg(args);
-    } catch (err) {
-      console.warn(`Failed to render segment with audio. Retrying with silence. Reason:`, err.message);
-      // Fallback: merge with silent stereo audio stream
-      const args = [
-        "-y",
-        "-ss", String(trimStart),
-        "-t", String(inputDuration),
-        "-tls_verify", "0",
-        "-i", videoPath,
-        "-f", "lavfi",
-        "-i", "anullsrc=r=44100:cl=stereo",
-        "-t", String(duration),
-        "-filter_complex", filterComplex,
-        "-map", "[v]",
-        "-map", "1:a",
-        "-c:v", "libx264",
-        "-pix_fmt", "yuv420p",
-        "-c:a", "aac",
-        ...audioArgs,
-        "-ar", "44100",
-        "-ac", "2",
-        "-r", "30",
-        "-shortest",
-        tempOut
-      ];
-      await runFfmpeg(args);
+      const backdropOp = project.backdropOpacity !== undefined ? project.backdropOpacity : 45;
+      const overlayDarkness = (100 - backdropOp) / 100;
+      const blurSize = Math.max(1, project.backdropBlur !== undefined ? project.backdropBlur : 20);
+      const scaledBlur = Math.max(1, Math.round(blurSize / 4));
+
+      const speed = block.playbackSpeed !== undefined ? block.playbackSpeed : 1.0;
+      const inputDuration = duration * speed;
+      const setptsVal = (1 / speed).toFixed(4);
+      const videoFilter = speed !== 1.0 ? `,setpts=${setptsVal}*PTS` : "";
+
+      const drawTextChain = [drawBanners, drawTitle, drawSub, rankOverlayFilters].filter(Boolean).join(",");
+      const filterComplex = emojiFilterChain
+        ? `[0:v]split[bg][fg];[bg]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=${scaledBlur}:2,scale=720:1280,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v_drawn];${emojiFilterChain}[v]`
+        : `[0:v]split[bg][fg];[bg]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=${scaledBlur}:2,scale=720:1280,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v]`;
+
+      const audioArgs = speed !== 1.0 ? ["-af", getAtempoFilter(speed)] : [];
+
+      try {
+        // Attempt using original audio
+        const args = [
+          "-y",
+          "-threads", "1",
+          "-ss", String(trimStart),
+          "-t", String(inputDuration),
+          "-tls_verify", "0",
+          "-i", videoPath,
+          "-filter_complex", filterComplex,
+          "-map", "[v]",
+          "-map", "0:a",
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-c:a", "aac",
+          ...audioArgs,
+          "-ar", "44100",
+          "-ac", "2",
+          "-r", "30",
+          "-shortest",
+          tempOut
+        ];
+        await runFfmpeg(args);
+      } catch (err) {
+        console.warn(`Failed to render segment with audio. Retrying with silence. Reason:`, err.message);
+        // Fallback: merge with silent stereo audio stream
+        const args = [
+          "-y",
+          "-threads", "1",
+          "-ss", String(trimStart),
+          "-t", String(inputDuration),
+          "-tls_verify", "0",
+          "-i", videoPath,
+          "-f", "lavfi",
+          "-i", "anullsrc=r=44100:cl=stereo",
+          "-t", String(duration),
+          "-filter_complex", filterComplex,
+          "-map", "[v]",
+          "-map", "1:a",
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-c:a", "aac",
+          ...audioArgs,
+          "-ar", "44100",
+          "-ac", "2",
+          "-r", "30",
+          "-shortest",
+          tempOut
+        ];
+        await runFfmpeg(args);
+      }
+    } finally {
+      if (downloadedTempFile && fs.existsSync(downloadedTempFile)) {
+        try {
+          fs.unlinkSync(downloadedTempFile);
+          console.log(`[EXPORT] Cleaned up temporary download file: ${downloadedTempFile}`);
+        } catch (unlinkErr) {
+          console.error(`[EXPORT] Failed to delete temporary download file:`, unlinkErr);
+        }
+      }
     }
   } else {
     // Render high quality static slate block
@@ -395,6 +427,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
 
     const args = [
       "-y",
+      "-threads", "1",
       "-f", "lavfi",
       "-i", `color=c=0x0b0e14:s=720x1280:d=${duration}:r=30`,
       "-f", "lavfi",
@@ -519,6 +552,7 @@ async function runExportInBackground(jobId, projectId, project, db) {
 
       const complexArgs = [
         "-y",
+        "-threads", "1",
         ...inputArgs,
         "-filter_complex", filterComplex,
         "-map", vStream,
@@ -539,6 +573,7 @@ async function runExportInBackground(jobId, projectId, project, db) {
 
       const concatArgs = [
         "-y",
+        "-threads", "1",
         "-f", "concat",
         "-safe", "0",
         "-i", concatTxtPath,
@@ -559,6 +594,7 @@ async function runExportInBackground(jobId, projectId, project, db) {
       if (musicPath.startsWith("http") || fs.existsSync(musicPath)) {
         const mixArgs = [
           "-y",
+          "-threads", "1",
           "-i", mergedVideoPath,
           "-stream_loop", "-1",
           "-tls_verify", "0",
