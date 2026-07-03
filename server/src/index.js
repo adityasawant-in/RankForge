@@ -39,6 +39,7 @@ if (fs.existsSync(oldUploadsDir)) {
 }
 
 import { execSync } from "child_process";
+import ffmpegPath from "ffmpeg-static";
 try {
   const nodeVer = execSync("node -v").toString().trim();
   console.log(`[DIAGNOSTIC] Global node: ${nodeVer}`);
@@ -52,6 +53,14 @@ try {
   console.error(`[DIAGNOSTIC] which node failed: ${err.message}`);
 }
 console.log(`[DIAGNOSTIC] process.execPath: ${process.execPath}`);
+
+try {
+  const filters = execSync(`"${ffmpegPath}" -filters`).toString();
+  const hasDrawtext = filters.includes("drawtext");
+  console.log(`[DIAGNOSTIC] FFmpeg static binary at ${ffmpegPath} has drawtext support: ${hasDrawtext}`);
+} catch (err) {
+  console.error(`[DIAGNOSTIC] FFmpeg filters check failed: ${err.message}`);
+}
 
 const app = express();
 app.use(cors());
