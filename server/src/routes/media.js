@@ -98,8 +98,17 @@ function runYtDlp(args) {
       }
     }
 
+    const nodeDir = path.dirname(process.execPath);
+    const customPath = `${nodeDir}${path.delimiter}${process.env.PATH || ""}`;
+    const execOptions = {
+      env: {
+        ...process.env,
+        PATH: customPath
+      }
+    };
+
     console.log(`[YT-DLP] Executing: ${cmd} ${finalArgs.join(" ")}`);
-    execFile(cmd, finalArgs, (error, stdout, stderr) => {
+    execFile(cmd, finalArgs, execOptions, (error, stdout, stderr) => {
       if (cookiesPath && fs.existsSync(cookiesPath)) {
         try {
           fs.unlinkSync(cookiesPath);
