@@ -74,6 +74,7 @@ async function deleteFromSupabase(url) {
 }
 
 function downloadVideo(url, outputPath) {
+  const pythonCmd = process.platform === "win32" ? "python" : "python3";
   return new Promise(async (resolve, reject) => {
     const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
     let lastError = null;
@@ -88,7 +89,7 @@ function downloadVideo(url, outputPath) {
           args.push(url);
 
           console.log(`[DOWNLOAD] Trying to download with cookie source: ${source || "none"}`);
-          execFile("python", args, (error, stdout, stderr) => {
+          execFile(pythonCmd, args, (error, stdout, stderr) => {
             if (error) {
               console.warn(`[DOWNLOAD] Failed with source ${source || "none"}:`, stderr || error.message);
               return rej(new Error(stderr || error.message));
@@ -108,6 +109,7 @@ function downloadVideo(url, outputPath) {
 }
 
 function getVideoTitle(url) {
+  const pythonCmd = process.platform === "win32" ? "python" : "python3";
   return new Promise(async (resolve) => {
     const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
     for (const source of cookieSources) {
@@ -118,7 +120,7 @@ function getVideoTitle(url) {
             args.push("--cookies-from-browser", source);
           }
           args.push(url);
-          execFile("python", args, (error, stdout, stderr) => {
+          execFile(pythonCmd, args, (error, stdout, stderr) => {
             if (error) return rej(error);
             res(stdout.trim());
           });

@@ -160,6 +160,13 @@ export async function writeDb(data) {
       try {
         await client.query('BEGIN');
 
+        const projectIds = data.projects.map(p => p.id);
+        if (projectIds.length > 0) {
+          await client.query('DELETE FROM projects WHERE id NOT IN (' + projectIds.map((_, i) => '$' + (i + 1)).join(',') + ')', projectIds);
+        } else {
+          await client.query('DELETE FROM projects');
+        }
+
         for (const p of data.projects) {
           await client.query(`
             INSERT INTO projects (

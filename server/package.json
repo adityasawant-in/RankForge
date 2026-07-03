@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "build": "echo 'Build not needed'"
+    "build": "python3 -m pip install --upgrade pip && (python3 -m pip install -U yt-dlp || pip install -U yt-dlp) || echo 'pip install bypassed/failed'"
   },
   "dependencies": {
     "cors": "^2.8.5",
