@@ -22,6 +22,57 @@ const upload = multer({ storage, limits: { fileSize: 500 * 1024 * 1024 } });
 
 const router = Router();
 
+async function uploadToSupabase(filePath, fileName, mimeType) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) return null;
+
+  const cleanUrl = supabaseUrl.replace(/\/$/, "");
+  const uploadUrl = `${cleanUrl}/storage/v1/object/media/${fileName}`;
+  const fileBuffer = fs.readFileSync(filePath);
+
+  const res = await fetch(uploadUrl, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${supabaseKey}`,
+      "apikey": supabaseKey,
+      "Content-Type": mimeType
+    },
+    body: fileBuffer
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Supabase upload failed: ${errText}`);
+  }
+
+  return `${cleanUrl}/storage/v1/object/public/media/${fileName}`;
+}
+
+async function deleteFromSupabase(url) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey || !url.includes("supabase.co")) return;
+
+  try {
+    const cleanUrl = supabaseUrl.replace(/\/$/, "");
+    const parts = url.split("/public/media/");
+    if (parts.length < 2) return;
+    const fileName = parts[1];
+
+    const deleteUrl = `${cleanUrl}/storage/v1/object/media/${fileName}`;
+    await fetch(deleteUrl, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${supabaseKey}`,
+        "apikey": supabaseKey
+      }
+    });
+  } catch (err) {
+    console.error("Failed to delete asset from Supabase Storage:", err.message);
+  }
+}
+
 function downloadVideo(url, outputPath) {
   return new Promise(async (resolve, reject) => {
     const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
@@ -86,25 +137,40 @@ function getVideoTitle(url) {
   });
 }
 
-router.get("/", (req, res) => {
-  const db = readDb();
+router.get("/", async (req, res) => {
+  const db = await readDb();
   res.json(db.media);
 });
 
-router.post("/upload", upload.single("file"), (req, res) => {
-  const db = readDb();
-  const isAudio = req.file.mimetype.startsWith("audio");
-  const asset = {
-    id: "med-" + nanoid(8),
-    name: req.body.name || req.file.originalname,
-    type: isAudio ? "audio" : "video",
-    url: `/uploads/${req.file.filename}`,
-    mimetype: req.file.mimetype,
-    createdAt: Date.now()
-  };
-  db.media.push(asset);
-  writeDb(db);
-  res.status(201).json(asset);
+router.post("/upload", upload.single("file"), async (req, res) => {
+  try {
+    const db = await readDb();
+    const isAudio = req.file.mimetype.startsWith("audio");
+    let assetUrl = `/uploads/${req.file.filename}`;
+
+    // Upload to Supabase Storage if configured
+    const cloudUrl = await uploadToSupabase(req.file.path, req.file.filename, req.file.mimetype);
+    if (cloudUrl) {
+      assetUrl = cloudUrl;
+      // Clean up the local file immediately
+      fs.unlinkSync(req.file.path);
+    }
+
+    const asset = {
+      id: "med-" + nanoid(8),
+      name: req.body.name || req.file.originalname,
+      type: isAudio ? "audio" : "video",
+      url: assetUrl,
+      mimetype: req.file.mimetype,
+      createdAt: Date.now()
+    };
+    db.media.push(asset);
+    await writeDb(db);
+    res.status(201).json(asset);
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: `Failed to upload media: ${err.message}` });
+  }
 });
 
 router.post("/import-url", async (req, res) => {
@@ -115,7 +181,6 @@ router.post("/import-url", async (req, res) => {
     const filename = `${Date.now()}-${nanoid(6)}.mp4`;
     const outputPath = path.join(VIDEO_DATA_DIR, filename);
 
-    // Fetch video title and download concurrently
     const [title] = await Promise.all([
       getVideoTitle(url).catch(() => "Imported Video"),
       downloadVideo(url, outputPath)
@@ -125,17 +190,27 @@ router.post("/import-url", async (req, res) => {
       throw new Error("Downloaded file was not found on disk");
     }
 
-    const db = readDb();
+    const db = await readDb();
+    let assetUrl = `/uploads/${filename}`;
+
+    // Upload to Supabase Storage if configured
+    const cloudUrl = await uploadToSupabase(outputPath, filename, "video/mp4");
+    if (cloudUrl) {
+      assetUrl = cloudUrl;
+      // Clean up the local file immediately
+      fs.unlinkSync(outputPath);
+    }
+
     const asset = {
       id: "med-" + nanoid(8),
       name: title || "Imported Video",
       type: "video",
-      url: `/uploads/${filename}`,
+      url: assetUrl,
       mimetype: "video/mp4",
       createdAt: Date.now()
     };
     db.media.push(asset);
-    writeDb(db);
+    await writeDb(db);
 
     res.status(201).json(asset);
   } catch (err) {
@@ -144,12 +219,16 @@ router.post("/import-url", async (req, res) => {
   }
 });
 
-router.delete("/:id", (req, res) => {
-  const db = readDb();
+router.delete("/:id", async (req, res) => {
+  const db = await readDb();
   const asset = db.media.find((m) => m.id === req.params.id);
   if (asset) {
-    const filePath = path.join(VIDEO_DATA_DIR, path.basename(asset.url));
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    if (asset.url.startsWith("http")) {
+      await deleteFromSupabase(asset.url);
+    } else {
+      const filePath = path.join(VIDEO_DATA_DIR, path.basename(asset.url));
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
   }
   db.media = db.media.filter((m) => m.id !== req.params.id);
   db.blocks.forEach((b) => {
@@ -160,7 +239,7 @@ router.delete("/:id", (req, res) => {
       if (p.backgroundMusicId === req.params.id) p.backgroundMusicId = null;
     });
   }
-  writeDb(db);
+  await writeDb(db);
   res.status(204).end();
 });
 

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useProject } from "../../store/ProjectContext";
+import { getAssetUrl } from "../../api";
 
 export default function MediaLibrarySection() {
   const { media, uploadMedia, deleteMedia, blocks, updateBlock } = useProject();
@@ -70,7 +71,7 @@ export default function MediaLibrarySection() {
           <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
             {videoAssets.map((asset) => (
               <div key={asset.id} className="group relative bg-surface-container rounded-lg overflow-hidden border border-outline/20 flex flex-col">
-                <video src={asset.url} className="w-full h-16 object-cover" muted />
+                <video src={getAssetUrl(asset.url)} className="w-full h-16 object-cover" muted />
                 <div className="p-1 text-center bg-surface-container-high shrink-0">
                   <p className="text-[9px] truncate max-w-full text-on-surface-variant">{asset.name}</p>
                 </div>

@@ -1,6 +1,6 @@
 import { MediaAsset, Project, RankingBlock } from "./types";
 
-const BASE = "/api";
+const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "") || "/api";
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -37,3 +37,13 @@ export const api = {
 
   exportManifest: (projectId: string) => `${BASE}/export?projectId=${projectId}`
 };
+
+export function getAssetUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  if (url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:")) {
+    return url;
+  }
+  const apiBase = import.meta.env.VITE_API_URL || "";
+  const serverRoot = apiBase.replace(/\/api\/?$/, "").replace(/\/$/, "");
+  return `${serverRoot}${url}`;
+}

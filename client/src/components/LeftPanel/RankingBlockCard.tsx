@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { RankingBlock, MediaAsset } from "../../types";
 import { useProject } from "../../store/ProjectContext";
+import { getAssetUrl } from "../../api";
 import EditBlockModal from "./EditBlockModal";
 
 function formatDuration(sec: number) {
@@ -54,7 +55,7 @@ export default function RankingBlockCard({
       >
         <div className="relative w-20 h-14 bg-surface-variant rounded-lg overflow-hidden shrink-0">
           {asset ? (
-            <video src={asset.url} className="w-full h-full object-cover" muted />
+            <video src={getAssetUrl(asset.url)} className="w-full h-full object-cover" muted />
           ) : (
             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
               <span className="material-symbols-outlined text-on-surface-variant text-lg">movie</span>

@@ -12,18 +12,18 @@ function normalizeRanks(db, projectId) {
   });
 }
 
-router.get("/", (req, res) => {
-  const db = readDb();
+router.get("/", async (req, res) => {
+  const db = await readDb();
   const { projectId } = req.query;
   if (!projectId) return res.status(400).json({ error: "projectId is required" });
   normalizeRanks(db, projectId);
-  writeDb(db);
+  await writeDb(db);
   const filtered = db.blocks.filter(b => b.projectId === projectId).sort((a, b) => a.rank - b.rank);
   res.json(filtered);
 });
 
-router.post("/", (req, res) => {
-  const db = readDb();
+router.post("/", async (req, res) => {
+  const db = await readDb();
   const projectId = req.body.projectId || req.query.projectId;
   if (!projectId) return res.status(400).json({ error: "projectId is required" });
   const projectBlocks = db.blocks.filter(b => b.projectId === projectId);
@@ -42,37 +42,37 @@ router.post("/", (req, res) => {
   };
   db.blocks.push(block);
   normalizeRanks(db, projectId);
-  writeDb(db);
+  await writeDb(db);
   const savedBlock = db.blocks.find((b) => b.id === block.id);
   res.status(201).json(savedBlock || block);
 });
 
-router.put("/:id", (req, res) => {
-  const db = readDb();
+router.put("/:id", async (req, res) => {
+  const db = await readDb();
   const idx = db.blocks.findIndex((b) => b.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Block not found" });
   const projectId = db.blocks[idx].projectId;
   db.blocks[idx] = { ...db.blocks[idx], ...req.body, id: db.blocks[idx].id };
   normalizeRanks(db, projectId);
-  writeDb(db);
+  await writeDb(db);
   const updatedBlock = db.blocks.find((b) => b.id === req.params.id);
   res.json(updatedBlock || db.blocks[idx]);
 });
 
-router.delete("/:id", (req, res) => {
-  const db = readDb();
+router.delete("/:id", async (req, res) => {
+  const db = await readDb();
   const block = db.blocks.find(b => b.id === req.params.id);
   if (!block) return res.status(404).json({ error: "Block not found" });
   const { projectId } = block;
   db.blocks = db.blocks.filter((b) => b.id !== req.params.id);
   normalizeRanks(db, projectId);
-  writeDb(db);
+  await writeDb(db);
   res.status(204).end();
 });
 
 // bulk reorder: [{id, rank}, ...]
-router.post("/reorder", (req, res) => {
-  const db = readDb();
+router.post("/reorder", async (req, res) => {
+  const db = await readDb();
   const projectId = req.body.projectId || req.query.projectId;
   if (!projectId) return res.status(400).json({ error: "projectId is required" });
   const order = req.body.order || [];
@@ -81,7 +81,7 @@ router.post("/reorder", (req, res) => {
     if (b) b.rank = rank;
   });
   normalizeRanks(db, projectId);
-  writeDb(db);
+  await writeDb(db);
   const filtered = db.blocks.filter(b => b.projectId === projectId).sort((a, b) => a.rank - b.rank);
   res.json(filtered);
 });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useProject } from "../../store/ProjectContext";
 import { buildSegments, activeSegment, totalDuration } from "../../utils/timeline";
 import { TitleOverlay } from "../../types";
+import { getAssetUrl } from "../../api";
 
 const formatTime = (secs: number) => {
   const m = Math.floor(secs / 60);
@@ -338,7 +339,7 @@ export default function PreviewCanvas({
               {/* Blurred background video layer */}
               <video
                 ref={blurVideoRef}
-                src={asset.url}
+                src={getAssetUrl(asset.url)}
                 className="absolute inset-0 w-full h-full object-cover scale-110 pointer-events-none select-none z-0"
                 style={{
                   opacity: (project.backdropOpacity !== undefined ? project.backdropOpacity : 45) / 100,
@@ -350,7 +351,7 @@ export default function PreviewCanvas({
               {/* Main sharp centered video layer */}
               <video
                 ref={videoRef}
-                src={asset.url}
+                src={getAssetUrl(asset.url)}
                 className="relative w-full h-full object-contain z-10"
                 onLoadedMetadata={(e) => {
                   const video = e.currentTarget;

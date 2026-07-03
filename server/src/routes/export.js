@@ -8,7 +8,9 @@ import { nanoid } from "nanoid";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
-const FFMPEG_PATH = path.join(__dirname, "..", "..", "ffmpeg.exe");
+const FFMPEG_PATH = process.env.FFMPEG_PATH || (process.platform === "win32"
+  ? path.join(__dirname, "..", "..", "ffmpeg.exe")
+  : "ffmpeg");
 const TEMP_DIR = path.join(__dirname, "..", "..", "temp");
 
 // Ensure temp directory exists
@@ -301,8 +303,10 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
   const rankOverlayFilters = rankDrawFilters.join(",");
 
   if (asset) {
-    const videoPath = path.join(VIDEO_DATA_DIR, path.basename(asset.url));
-    if (!fs.existsSync(videoPath)) {
+    const videoPath = asset.url.startsWith("http")
+      ? asset.url
+      : path.join(VIDEO_DATA_DIR, path.basename(asset.url));
+    if (!videoPath.startsWith("http") && !fs.existsSync(videoPath)) {
       throw new Error(`Video file not found: ${videoPath}`);
     }
 
@@ -409,7 +413,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
 }
 
 router.get("/", async (req, res) => {
-  const db = readDb();
+  const db = await readDb();
   const { projectId } = req.query;
   if (!projectId) return res.status(400).json({ error: "projectId is required" });
   
@@ -552,8 +556,10 @@ router.get("/", async (req, res) => {
     const finalOutPath = path.join(runTempDir, "final_export.mp4");
 
     if (musicAsset) {
-      const musicPath = path.join(UPLOAD_DIR, path.basename(musicAsset.url));
-      if (fs.existsSync(musicPath)) {
+      const musicPath = musicAsset.url.startsWith("http")
+        ? musicAsset.url
+        : path.join(VIDEO_DATA_DIR, path.basename(musicAsset.url));
+      if (musicPath.startsWith("http") || fs.existsSync(musicPath)) {
         const mixArgs = [
           "-y",
           "-i", mergedVideoPath,

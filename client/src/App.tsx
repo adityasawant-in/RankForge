@@ -5,6 +5,7 @@ import Timeline from "./components/Timeline/Timeline";
 import { useProject } from "./store/ProjectContext";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { buildSegments, totalDuration } from "./utils/timeline";
+import { getAssetUrl } from "./api";
 
 export default function App() {
   const { loading, project, media, blocks } = useProject();
@@ -185,7 +186,7 @@ export default function App() {
       {musicAsset && (
         <audio
           ref={audioRef}
-          src={musicAsset.url}
+          src={getAssetUrl(musicAsset.url)}
           loop
           onLoadedMetadata={(e) => {
             const audio = e.currentTarget;

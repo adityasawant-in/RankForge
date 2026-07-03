@@ -8,22 +8,22 @@ import { fileURLToPath } from "url";
 const router = Router();
 
 // GET all projects
-router.get("/list", (req, res) => {
-  const db = readDb();
+router.get("/list", async (req, res) => {
+  const db = await readDb();
   res.json(db.projects || []);
 });
 
 // GET single project
-router.get("/:id", (req, res) => {
-  const db = readDb();
+router.get("/:id", async (req, res) => {
+  const db = await readDb();
   const p = (db.projects || []).find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: "Project not found" });
   res.json(p);
 });
 
 // POST create new project
-router.post("/", (req, res) => {
-  const db = readDb();
+router.post("/", async (req, res) => {
+  const db = await readDb();
   if (!db.projects) db.projects = [];
   
   const newProject = {
@@ -55,13 +55,13 @@ router.post("/", (req, res) => {
   };
   
   db.projects.push(newProject);
-  writeDb(db);
+  await writeDb(db);
   res.status(201).json(newProject);
 });
 
 // PUT update project
-router.put("/:id", (req, res) => {
-  const db = readDb();
+router.put("/:id", async (req, res) => {
+  const db = await readDb();
   if (!db.projects) db.projects = [];
   const idx = db.projects.findIndex((x) => x.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Project not found" });
@@ -72,13 +72,13 @@ router.put("/:id", (req, res) => {
     id: db.projects[idx].id,
     updatedAt: Date.now()
   };
-  writeDb(db);
+  await writeDb(db);
   res.json(db.projects[idx]);
 });
 
 // DELETE project
-router.delete("/:id", (req, res) => {
-  const db = readDb();
+router.delete("/:id", async (req, res) => {
+  const db = await readDb();
   if (!db.projects) db.projects = [];
   
   // Find all blocks for this project
@@ -106,13 +106,13 @@ router.delete("/:id", (req, res) => {
 
   const mediaToDelete = projectMediaIds.filter((id) => !otherMediaIds.has(id));
 
-  // Physically delete the files for those media assets
+  // Physically delete the files for those media assets (only if local)
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
   
   mediaToDelete.forEach((mediaId) => {
     const asset = db.media.find((m) => m.id === mediaId);
-    if (asset) {
+    if (asset && !asset.url.startsWith("http")) {
       const filePath = path.join(VIDEO_DATA_DIR, path.basename(asset.url));
       if (fs.existsSync(filePath)) {
         try {
@@ -132,7 +132,7 @@ router.delete("/:id", (req, res) => {
   db.projects = db.projects.filter((x) => x.id !== req.params.id);
   db.blocks = db.blocks.filter((b) => b.projectId !== req.params.id);
   
-  writeDb(db);
+  await writeDb(db);
   res.status(204).end();
 });
 
