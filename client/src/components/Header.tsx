@@ -1,5 +1,5 @@
 import { useProject } from "../store/ProjectContext";
-import { api } from "../api";
+import { api, BASE } from "../api";
 import { useState } from "react";
 
 export default function Header() {
@@ -27,7 +27,7 @@ export default function Header() {
     setExporting(true);
     try {
       await saveNow();
-      const res = await fetch(`/api/export?projectId=${project.id}`);
+      const res = await fetch(`${BASE}/export?projectId=${project.id}`);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to start export job");
@@ -38,7 +38,7 @@ export default function Header() {
       await new Promise<void>((resolve, reject) => {
         const intervalId = setInterval(async () => {
           try {
-            const statusRes = await fetch(`/api/export/status?jobId=${jobId}`);
+            const statusRes = await fetch(`${BASE}/export/status?jobId=${jobId}`);
             if (!statusRes.ok) {
               clearInterval(intervalId);
               reject(new Error("Failed to check export status"));
@@ -48,7 +48,7 @@ export default function Header() {
             if (job.status === "completed") {
               clearInterval(intervalId);
               
-              const downloadUrl = `/api/export/download?jobId=${jobId}`;
+              const downloadUrl = `${BASE}/export/download?jobId=${jobId}`;
               const link = document.createElement("a");
               link.href = downloadUrl;
               link.download = job.filename || `${project.name.replace(/\s+/g, "_")}.mp4`;

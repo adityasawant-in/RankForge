@@ -1,6 +1,6 @@
 import { MediaAsset, Project, RankingBlock } from "./types";
 
-const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "") || "/api";
+export const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "") || "/api";
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
