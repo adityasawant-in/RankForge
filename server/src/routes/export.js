@@ -359,7 +359,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
           "-threads", "1",
           "-ss", String(trimStart),
           "-t", String(inputDuration),
-          "-tls_verify", "0",
           "-i", videoPath,
           "-filter_complex", filterComplex,
           "-map", "[v]",
@@ -383,7 +382,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
           "-threads", "1",
           "-ss", String(trimStart),
           "-t", String(inputDuration),
-          "-tls_verify", "0",
           "-i", videoPath,
           "-f", "lavfi",
           "-i", "anullsrc=r=44100:cl=stereo",
@@ -592,12 +590,13 @@ async function runExportInBackground(jobId, projectId, project, db) {
         ? musicAsset.url
         : path.join(VIDEO_DATA_DIR, path.basename(musicAsset.url));
       if (musicPath.startsWith("http") || fs.existsSync(musicPath)) {
+        const isHttp = musicPath.startsWith("http");
         const mixArgs = [
           "-y",
           "-threads", "1",
           "-i", mergedVideoPath,
           "-stream_loop", "-1",
-          "-tls_verify", "0",
+          ...(isHttp ? ["-tls_verify", "0"] : []),
           "-i", musicPath,
           "-filter_complex", "[1:a]volume=0.15[music];[0:a][music]amix=inputs=2:duration=first:dropout_transition=2[a]",
           "-map", "0:v",
