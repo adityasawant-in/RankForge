@@ -5,12 +5,11 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { execFile } from "child_process";
 import { nanoid } from "nanoid";
+import ffmpegPath from "ffmpeg-static";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
-const FFMPEG_PATH = process.env.FFMPEG_PATH || (process.platform === "win32"
-  ? path.join(__dirname, "..", "..", "ffmpeg.exe")
-  : "ffmpeg");
+const FFMPEG_PATH = process.env.FFMPEG_PATH || ffmpegPath;
 const TEMP_DIR = path.join(__dirname, "..", "..", "temp");
 
 // Ensure temp directory exists
