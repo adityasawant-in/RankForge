@@ -94,9 +94,18 @@ function runYtDlp(args) {
 
     let cookiesPath = null;
     const localCookies = path.join(__dirname, "..", "..", "cookies.txt");
+    const repoCookies = path.join(__dirname, "..", "..", "..", "cookies.txt");
+    let finalCookiesPath = null;
+
     if (fs.existsSync(localCookies)) {
-      console.log(`[YT-DLP] Using local secret cookies file: ${localCookies}`);
-      finalArgs.push("--cookies", localCookies);
+      finalCookiesPath = localCookies;
+    } else if (fs.existsSync(repoCookies)) {
+      finalCookiesPath = repoCookies;
+    }
+
+    if (finalCookiesPath) {
+      console.log(`[YT-DLP] Using local secret cookies file: ${finalCookiesPath}`);
+      finalArgs.push("--cookies", finalCookiesPath);
     } else if (process.env.YOUTUBE_COOKIES) {
       cookiesPath = path.join(TEMP_DIR, `cookies-${Date.now()}-${nanoid(4)}.txt`);
       try {
