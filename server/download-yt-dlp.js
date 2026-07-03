@@ -7,7 +7,7 @@ const dest = path.join(__dirname, "yt-dlp");
 
 async function download() {
   console.log("Downloading yt-dlp binary...");
-  const url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp";
+  const url = "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp";
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to download yt-dlp: ${res.statusText}`);

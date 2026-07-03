@@ -109,7 +109,7 @@ function downloadVideo(url, outputPath) {
           args.push("--cookies-from-browser", source);
         }
         if (url.includes("youtube.com") || url.includes("youtu.be")) {
-          args.push("--extractor-args", "youtube:player_client=web,android");
+          args.push("--extractor-args", "youtube:player_client=default,-android_sdkless");
         }
         args.push(url);
 
@@ -138,7 +138,7 @@ function getVideoTitle(url) {
           args.push("--cookies-from-browser", source);
         }
         if (url.includes("youtube.com") || url.includes("youtu.be")) {
-          args.push("--extractor-args", "youtube:player_client=web,android");
+          args.push("--extractor-args", "youtube:player_client=default,-android_sdkless");
         }
         args.push(url);
         const title = await runYtDlp(args);
