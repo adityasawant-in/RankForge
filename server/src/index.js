@@ -55,6 +55,13 @@ try {
 console.log(`[DIAGNOSTIC] process.execPath: ${process.execPath}`);
 
 const localLinuxFfmpeg = path.resolve(__dirname, "..", "ffmpeg");
+console.log(`[DIAGNOSTIC] Local Linux FFmpeg path: ${localLinuxFfmpeg}, exists: ${fs.existsSync(localLinuxFfmpeg)}`);
+try {
+  console.log(`[DIAGNOSTIC] Files in server directory:`, fs.readdirSync(path.resolve(__dirname, "..")));
+} catch (dirErr) {
+  console.error(`[DIAGNOSTIC] Failed to read server directory: ${dirErr.message}`);
+}
+
 const selectedFfmpeg = process.env.FFMPEG_PATH || (fs.existsSync(localLinuxFfmpeg) ? localLinuxFfmpeg : ffmpegPath);
 
 try {
