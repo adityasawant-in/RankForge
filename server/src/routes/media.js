@@ -161,10 +161,15 @@ async function downloadViaCobalt(url, outputPath) {
 
   let lastError = null;
   for (const endpoint of cobaltEndpoints) {
+    let apiTimeoutId = null;
+    let fileTimeoutId = null;
     try {
       console.log(`[COBALT] Attempting direct download using endpoint: ${endpoint} for URL: ${url}`);
       const targetUrl = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
       
+      const apiController = new AbortController();
+      apiTimeoutId = setTimeout(() => apiController.abort(), 6000);
+
       const response = await fetch(targetUrl, {
         method: "POST",
         headers: {
@@ -173,8 +178,10 @@ async function downloadViaCobalt(url, outputPath) {
         },
         body: JSON.stringify({
           url: url
-        })
+        }),
+        signal: apiController.signal
       });
+      clearTimeout(apiTimeoutId);
 
       if (!response.ok) {
         const errText = await response.text().catch(() => "");
@@ -193,7 +200,14 @@ async function downloadViaCobalt(url, outputPath) {
       }
 
       console.log(`[COBALT] Downloading stream from: ${streamUrl}`);
-      const fileRes = await fetch(streamUrl);
+      const fileController = new AbortController();
+      fileTimeoutId = setTimeout(() => fileController.abort(), 15000);
+
+      const fileRes = await fetch(streamUrl, {
+        signal: fileController.signal
+      });
+      clearTimeout(fileTimeoutId);
+
       if (!fileRes.ok) {
         throw new Error(`Failed to download stream from Cobalt: ${fileRes.statusText}`);
       }
@@ -203,6 +217,8 @@ async function downloadViaCobalt(url, outputPath) {
       console.log(`[COBALT] Download completed successfully via Cobalt (${endpoint}) to: ${outputPath}`);
       return;
     } catch (err) {
+      if (apiTimeoutId) clearTimeout(apiTimeoutId);
+      if (fileTimeoutId) clearTimeout(fileTimeoutId);
       console.warn(`[COBALT] Endpoint ${endpoint} failed: ${err.message}`);
       lastError = err;
     }
