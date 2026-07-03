@@ -36,9 +36,9 @@ async function download() {
   console.log("Roboto-Bold.ttf font downloaded successfully to", fontDest);
 
   if (process.platform === "linux") {
-    console.log("Downloading official John Van Sickle static FFmpeg build for Linux...");
+    console.log("Downloading official BtbN full static FFmpeg build for Linux...");
     const archivePath = path.join(__dirname, "ffmpeg.tar.xz");
-    const ffmpegUrl = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz";
+    const ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz";
     
     const ffmpegRes = await fetch(ffmpegUrl);
     if (!ffmpegRes.ok) {
@@ -54,13 +54,16 @@ async function download() {
     execSync(`tar -xJf "${archivePath}" -C "${extractTempDir}"`);
     
     const subdirs = fs.readdirSync(extractTempDir);
-    const buildDirName = subdirs.find(d => d.includes("static"));
+    const buildDirName = subdirs.find(d => d.includes("ffmpeg") || d.includes("static"));
     if (buildDirName) {
-      const srcFfmpeg = path.join(extractTempDir, buildDirName, "ffmpeg");
+      const pathWithBin = path.join(extractTempDir, buildDirName, "bin", "ffmpeg");
+      const pathWithoutBin = path.join(extractTempDir, buildDirName, "ffmpeg");
+      const srcFfmpeg = fs.existsSync(pathWithBin) ? pathWithBin : pathWithoutBin;
+      
       const destFfmpeg = path.join(__dirname, "ffmpeg");
       fs.copyFileSync(srcFfmpeg, destFfmpeg);
       fs.chmodSync(destFfmpeg, "755");
-      console.log("Official FFmpeg binary successfully installed to", destFfmpeg);
+      console.log("Official BtbN FFmpeg binary successfully installed to", destFfmpeg);
     }
     
     // Cleanup
