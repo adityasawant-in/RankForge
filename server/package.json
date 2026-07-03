@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "build": "python3 -m pip install --upgrade pip && (python3 -m pip install -U yt-dlp || pip install -U yt-dlp) || echo 'pip install bypassed/failed'"
+    "build": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp || echo 'Bypassed local yt-dlp download'"
   },
   "dependencies": {
     "cors": "^2.8.5",

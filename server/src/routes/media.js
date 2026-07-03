@@ -73,30 +73,43 @@ async function deleteFromSupabase(url) {
   }
 }
 
+function runYtDlp(args) {
+  return new Promise((resolve, reject) => {
+    const localPath = path.join(__dirname, "..", "..", "yt-dlp");
+    let cmd, finalArgs;
+    if (fs.existsSync(localPath)) {
+      cmd = localPath;
+      finalArgs = args;
+    } else {
+      cmd = process.platform === "win32" ? "python" : "python3";
+      finalArgs = ["-m", "yt_dlp", ...args];
+    }
+
+    console.log(`[YT-DLP] Executing: ${cmd} ${finalArgs.join(" ")}`);
+    execFile(cmd, finalArgs, (error, stdout, stderr) => {
+      if (error) {
+        return reject(new Error(stderr || error.message));
+      }
+      resolve(stdout);
+    });
+  });
+}
+
 function downloadVideo(url, outputPath) {
-  const pythonCmd = process.platform === "win32" ? "python" : "python3";
   return new Promise(async (resolve, reject) => {
     const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
     let lastError = null;
 
     for (const source of cookieSources) {
       try {
-        await new Promise((res, rej) => {
-          const args = ["-m", "yt_dlp", "-f", "best[ext=mp4]/best", "-o", outputPath];
-          if (source) {
-            args.push("--cookies-from-browser", source);
-          }
-          args.push(url);
+        const args = ["-f", "best[ext=mp4]/best", "-o", outputPath];
+        if (source) {
+          args.push("--cookies-from-browser", source);
+        }
+        args.push(url);
 
-          console.log(`[DOWNLOAD] Trying to download with cookie source: ${source || "none"}`);
-          execFile(pythonCmd, args, (error, stdout, stderr) => {
-            if (error) {
-              console.warn(`[DOWNLOAD] Failed with source ${source || "none"}:`, stderr || error.message);
-              return rej(new Error(stderr || error.message));
-            }
-            res(stdout);
-          });
-        });
+        console.log(`[DOWNLOAD] Trying to download with cookie source: ${source || "none"}`);
+        await runYtDlp(args);
         console.log(`[DOWNLOAD] Succeeded using cookie source: ${source || "none"}`);
         return resolve();
       } catch (err) {
@@ -109,23 +122,17 @@ function downloadVideo(url, outputPath) {
 }
 
 function getVideoTitle(url) {
-  const pythonCmd = process.platform === "win32" ? "python" : "python3";
   return new Promise(async (resolve) => {
     const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
     for (const source of cookieSources) {
       try {
-        const title = await new Promise((res, rej) => {
-          const args = ["-m", "yt_dlp", "--get-title"];
-          if (source) {
-            args.push("--cookies-from-browser", source);
-          }
-          args.push(url);
-          execFile(pythonCmd, args, (error, stdout, stderr) => {
-            if (error) return rej(error);
-            res(stdout.trim());
-          });
-        });
-        if (title) return resolve(title);
+        const args = ["--get-title"];
+        if (source) {
+          args.push("--cookies-from-browser", source);
+        }
+        args.push(url);
+        const title = await runYtDlp(args);
+        if (title) return resolve(title.trim());
       } catch {
         // Continue
       }
