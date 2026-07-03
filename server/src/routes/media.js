@@ -106,7 +106,10 @@ function runYtDlp(args) {
     const execOptions = {
       env: {
         ...process.env,
-        PATH: customPath
+        PATH: customPath,
+        HOME: TEMP_DIR,
+        XDG_CONFIG_HOME: TEMP_DIR,
+        XDG_CACHE_HOME: TEMP_DIR
       }
     };
 
