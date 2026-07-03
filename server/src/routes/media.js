@@ -240,10 +240,8 @@ router.post("/import-url", async (req, res) => {
     const filename = `${Date.now()}-${nanoid(6)}.mp4`;
     const outputPath = path.join(VIDEO_DATA_DIR, filename);
 
-    const [title] = await Promise.all([
-      getVideoTitle(url).catch(() => "Imported Video"),
-      downloadVideo(url, outputPath)
-    ]);
+    const title = await getVideoTitle(url).catch(() => "Imported Video");
+    await downloadVideo(url, outputPath);
 
     if (!fs.existsSync(outputPath)) {
       throw new Error("Downloaded file was not found on disk");
