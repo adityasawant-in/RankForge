@@ -151,10 +151,10 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
   // Convert CSS color (Hex, RGB, RGBA) to FFmpeg color syntax
   const headerColorVal = parseFfmpegColor(project.headerBgColor || "#000000");
 
-  // Arial Bold or Arial on Windows
-  const fontFile = fs.existsSync("C:/Windows/Fonts/arialbd.ttf")
-    ? "C\\:/Windows/Fonts/arialbd.ttf"
-    : "C\\:/Windows/Fonts/arial.ttf";
+  // Resolve absolute path to our static Roboto-Bold font file
+  const fontFile = path.resolve(__dirname, "..", "..", "data", "font.ttf")
+    .replace(/\\/g, "/")
+    .replace(/:/g, "\\:");
 
   const subBgColorVal = parseFfmpegColor(project.subtitleBgColor || "#0b0e14");
 
