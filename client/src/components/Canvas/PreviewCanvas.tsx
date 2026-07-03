@@ -223,8 +223,9 @@ export default function PreviewCanvas({
             maxWidth: "90vw",
             aspectRatio: "9/16"
           } : {
-            width: 320 * (zoom / 75),
-            aspectRatio: "9/16"
+            height: `calc(min(70vh, calc(100vh - 320px)) * ${zoom / 75})`,
+            aspectRatio: "9/16",
+            maxHeight: "90%"
           }}
         >
         {/* Custom Header Banner with adjustable bg color */}

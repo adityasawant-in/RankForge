@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { RankingBlock } from "../../types";
 import { useProject } from "../../store/ProjectContext";
 
@@ -62,7 +63,7 @@ export default function EditBlockModal({
     }
   };
 
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
@@ -214,6 +215,7 @@ export default function EditBlockModal({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
