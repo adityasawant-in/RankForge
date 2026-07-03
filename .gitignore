@@ -1,0 +1,14 @@
+node_modules
+dist
+server/data/db.json
+server/uploads/*
+!server/uploads/.gitkeep
+server/ffmpeg.exe
+server/content/test/*
+server/temp/*
+*.mp4
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
