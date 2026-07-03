@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "build": "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp && chmod +x yt-dlp || echo 'Bypassed local yt-dlp download'"
+    "build": "node download-yt-dlp.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

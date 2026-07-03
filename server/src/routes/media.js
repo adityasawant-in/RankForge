@@ -77,7 +77,7 @@ function runYtDlp(args) {
   return new Promise((resolve, reject) => {
     const localPath = path.join(__dirname, "..", "..", "yt-dlp");
     let cmd, finalArgs;
-    if (fs.existsSync(localPath)) {
+    if (process.platform !== "win32" && fs.existsSync(localPath)) {
       cmd = localPath;
       finalArgs = args;
     } else {
