@@ -87,6 +87,9 @@ function runYtDlp(args) {
       finalArgs = ["-m", "yt_dlp", ...args];
     }
 
+    // Solve JS signatures using remote ejs package on GitHub
+    finalArgs.push("--remote-components", "ejs:github");
+
     let cookiesPath = null;
     if (process.env.YOUTUBE_COOKIES) {
       cookiesPath = path.join(TEMP_DIR, `cookies-${Date.now()}-${nanoid(4)}.txt`);
