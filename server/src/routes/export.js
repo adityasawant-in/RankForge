@@ -9,7 +9,8 @@ import ffmpegPath from "ffmpeg-static";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
-const FFMPEG_PATH = process.env.FFMPEG_PATH || ffmpegPath;
+const localLinuxFfmpeg = path.resolve(__dirname, "..", "..", "ffmpeg");
+const FFMPEG_PATH = process.env.FFMPEG_PATH || (fs.existsSync(localLinuxFfmpeg) ? localLinuxFfmpeg : ffmpegPath);
 const TEMP_DIR = path.join(__dirname, "..", "..", "temp");
 
 // Ensure temp directory exists

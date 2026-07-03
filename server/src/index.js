@@ -54,10 +54,13 @@ try {
 }
 console.log(`[DIAGNOSTIC] process.execPath: ${process.execPath}`);
 
+const localLinuxFfmpeg = path.resolve(__dirname, "..", "ffmpeg");
+const selectedFfmpeg = process.env.FFMPEG_PATH || (fs.existsSync(localLinuxFfmpeg) ? localLinuxFfmpeg : ffmpegPath);
+
 try {
-  const filters = execSync(`"${ffmpegPath}" -filters`).toString();
+  const filters = execSync(`"${selectedFfmpeg}" -filters`).toString();
   const hasDrawtext = filters.includes("drawtext");
-  console.log(`[DIAGNOSTIC] FFmpeg static binary at ${ffmpegPath} has drawtext support: ${hasDrawtext}`);
+  console.log(`[DIAGNOSTIC] FFmpeg binary at ${selectedFfmpeg} has drawtext support: ${hasDrawtext}`);
 } catch (err) {
   console.error(`[DIAGNOSTIC] FFmpeg filters check failed: ${err.message}`);
 }

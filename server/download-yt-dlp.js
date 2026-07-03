@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dest = path.join(__dirname, "yt-dlp");
@@ -33,6 +34,39 @@ async function download() {
   const fontBuffer = await fontRes.arrayBuffer();
   fs.writeFileSync(fontDest, Buffer.from(fontBuffer));
   console.log("Roboto-Bold.ttf font downloaded successfully to", fontDest);
+
+  if (process.platform === "linux") {
+    console.log("Downloading official John Van Sickle static FFmpeg build for Linux...");
+    const archivePath = path.join(__dirname, "ffmpeg.tar.xz");
+    const ffmpegUrl = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz";
+    
+    const ffmpegRes = await fetch(ffmpegUrl);
+    if (!ffmpegRes.ok) {
+      throw new Error(`Failed to download static FFmpeg: ${ffmpegRes.statusText}`);
+    }
+    const ffmpegBuffer = await ffmpegRes.arrayBuffer();
+    fs.writeFileSync(archivePath, Buffer.from(ffmpegBuffer));
+    console.log("Archive downloaded. Extracting using tar...");
+
+    const extractTempDir = path.join(__dirname, "ffmpeg_temp");
+    if (!fs.existsSync(extractTempDir)) fs.mkdirSync(extractTempDir, { recursive: true });
+    
+    execSync(`tar -xJf "${archivePath}" -C "${extractTempDir}"`);
+    
+    const subdirs = fs.readdirSync(extractTempDir);
+    const buildDirName = subdirs.find(d => d.includes("static"));
+    if (buildDirName) {
+      const srcFfmpeg = path.join(extractTempDir, buildDirName, "ffmpeg");
+      const destFfmpeg = path.join(__dirname, "ffmpeg");
+      fs.copyFileSync(srcFfmpeg, destFfmpeg);
+      fs.chmodSync(destFfmpeg, "755");
+      console.log("Official FFmpeg binary successfully installed to", destFfmpeg);
+    }
+    
+    // Cleanup
+    fs.rmSync(archivePath, { force: true });
+    fs.rmSync(extractTempDir, { recursive: true, force: true });
+  }
 }
 
 download().catch((err) => {
