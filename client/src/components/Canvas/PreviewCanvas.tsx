@@ -123,6 +123,14 @@ export default function PreviewCanvas({
   }, [activeTransition]);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -203,13 +211,21 @@ export default function PreviewCanvas({
   if (!project) return null;
 
   return (
-    <section className="flex-1 canvas-bg flex items-center justify-center relative p-12 overflow-hidden">
-      <div ref={wrapperRef} id="stage-fullscreen-wrapper" className="relative group">
+    <section className="flex-1 canvas-bg flex items-center justify-center relative p-2 lg:p-12 overflow-hidden">
+      <div ref={wrapperRef} id="stage-fullscreen-wrapper" className="relative group flex items-center justify-center">
         <div
           ref={stageRef}
           id="stage-container"
-          className="bg-black rounded-[32px] border-[8px] border-surface-variant relative overflow-hidden flex flex-col [container-type:size]"
-          style={{ width: 320 * (zoom / 75), aspectRatio: "9/16" }}
+          className="bg-black rounded-[20px] lg:rounded-[32px] border-[4px] lg:border-[8px] border-surface-variant relative overflow-hidden flex flex-col [container-type:size]"
+          style={isMobile ? {
+            height: "calc(38vh - 24px)",
+            width: "calc((38vh - 24px) * 9 / 16)",
+            maxWidth: "90vw",
+            aspectRatio: "9/16"
+          } : {
+            width: 320 * (zoom / 75),
+            aspectRatio: "9/16"
+          }}
         >
         {/* Custom Header Banner with adjustable bg color */}
         <div
@@ -543,19 +559,21 @@ export default function PreviewCanvas({
       </div>
       </div>
 
-      <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-surface-dim/80 backdrop-blur rounded-full border border-outline/30 px-3 py-1.5 z-40">
-        <button onClick={() => setZoom((z) => Math.max(25, z - 10))} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
-          zoom_out
-        </button>
-        <span className="text-xs font-medium text-on-surface-variant w-9 text-center">{zoom}%</span>
-        <button onClick={() => setZoom((z) => Math.min(150, z + 10))} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
-          zoom_in
-        </button>
-        <div className="h-4 w-px bg-outline/30" />
-        <button onClick={toggleFullscreen} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
-          fullscreen
-        </button>
-      </div>
+      {!isMobile && (
+        <div className="absolute bottom-6 right-6 flex items-center gap-2 bg-surface-dim/80 backdrop-blur rounded-full border border-outline/30 px-3 py-1.5 z-40">
+          <button onClick={() => setZoom((z) => Math.max(25, z - 10))} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
+            zoom_out
+          </button>
+          <span className="text-xs font-medium text-on-surface-variant w-9 text-center">{zoom}%</span>
+          <button onClick={() => setZoom((z) => Math.min(150, z + 10))} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
+            zoom_in
+          </button>
+          <div className="h-4 w-px bg-outline/30" />
+          <button onClick={toggleFullscreen} className="material-symbols-outlined text-lg text-on-surface-variant hover:text-white">
+            fullscreen
+          </button>
+        </div>
+      )}
     </section>
   );
 }

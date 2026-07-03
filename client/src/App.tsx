@@ -87,7 +87,7 @@ export default function App() {
     }
   }, [isPlaying, playhead, musicAsset?.url]);
 
-  const [activeMobileTab, setActiveMobileTab] = useState<"settings" | "preview" | "timeline">("preview");
+  const [activeMobileTab, setActiveMobileTab] = useState<"settings" | "timeline">("settings");
 
   if (loading) {
     return (
@@ -126,60 +126,51 @@ export default function App() {
 
       {/* Mobile/Tablet view (visible below lg: < 1024px) */}
       <div className="flex lg:hidden flex-col flex-1 overflow-hidden">
-        <main className="flex-1 flex overflow-hidden relative">
-          {activeMobileTab === "settings" && (
-            <div className="w-full h-full overflow-y-auto bg-surface-dim">
-              <LeftPanel />
-            </div>
-          )}
-          
-          {activeMobileTab === "preview" && (
-            <div className="w-full h-full flex flex-col bg-background">
-              <PreviewCanvas playhead={playhead} isPlaying={isPlaying} setPlayhead={setPlayhead} setIsPlaying={setIsPlaying} />
-            </div>
-          )}
-          
-          {activeMobileTab === "timeline" && (
-            <div className="w-full h-full overflow-y-auto bg-surface-dim">
-              <Timeline playhead={playhead} setPlayhead={setPlayhead} isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
-            </div>
-          )}
-        </main>
+        {/* Top: Permanent Preview Canvas */}
+        <div className="h-[38vh] bg-[#0b0e14] border-b border-outline/10 relative shrink-0 flex flex-col overflow-hidden">
+          <PreviewCanvas playhead={playhead} isPlaying={isPlaying} setPlayhead={setPlayhead} setIsPlaying={setIsPlaying} />
+        </div>
+        
+        {/* Bottom: Tabbed Panels */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-surface-dim">
+          <div className="flex-1 overflow-hidden relative">
+            {activeMobileTab === "settings" && (
+              <div className="w-full h-full overflow-y-auto bg-surface-dim">
+                <LeftPanel />
+              </div>
+            )}
+            
+            {activeMobileTab === "timeline" && (
+              <div className="w-full h-full overflow-y-auto bg-surface-dim">
+                <Timeline playhead={playhead} setPlayhead={setPlayhead} isPlaying={isPlaying} setIsPlaying={setIsPlaying} />
+              </div>
+            )}
+          </div>
 
-        {/* Mobile Tab bar navigation */}
-        <div className="h-16 bg-surface-container border-t border-outline/20 flex items-center justify-around px-4 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActiveMobileTab("settings")}
-            className={`flex flex-col items-center gap-1.5 transition-all ${
-              activeMobileTab === "settings" ? "text-primary scale-105" : "text-on-surface-variant/60 hover:text-white"
-            }`}
-          >
-            <span className="material-symbols-outlined text-xl">tune</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">Settings</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setActiveMobileTab("preview")}
-            className={`flex flex-col items-center gap-1.5 transition-all ${
-              activeMobileTab === "preview" ? "text-primary scale-105" : "text-on-surface-variant/60 hover:text-white"
-            }`}
-          >
-            <span className="material-symbols-outlined text-xl">play_circle</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">Preview</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveMobileTab("timeline")}
-            className={`flex flex-col items-center gap-1.5 transition-all ${
-              activeMobileTab === "timeline" ? "text-primary scale-105" : "text-on-surface-variant/60 hover:text-white"
-            }`}
-          >
-            <span className="material-symbols-outlined text-xl">splitscreen</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider">Timeline</span>
-          </button>
+          {/* Mobile Tab bar navigation */}
+          <div className="h-14 bg-surface-container border-t border-outline/20 flex items-center justify-around px-4 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveMobileTab("settings")}
+              className={`flex flex-col items-center gap-1 transition-all ${
+                activeMobileTab === "settings" ? "text-primary scale-105" : "text-on-surface-variant/60 hover:text-white"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">tune</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">Settings & Media</span>
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => setActiveMobileTab("timeline")}
+              className={`flex flex-col items-center gap-1 transition-all ${
+                activeMobileTab === "timeline" ? "text-primary scale-105" : "text-on-surface-variant/60 hover:text-white"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">splitscreen</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">Timeline</span>
+            </button>
+          </div>
         </div>
       </div>
       

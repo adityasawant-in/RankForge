@@ -234,7 +234,7 @@ export default function Timeline({
         >
           <div 
             onPointerDown={handleScrubStart}
-            className="w-3.5 h-3.5 bg-primary absolute -top-1.5 -left-1.5 rounded-sm rotate-45 pointer-events-auto cursor-ew-resize hover:scale-110 active:scale-95 transition-transform" 
+            className="w-5 h-5 lg:w-3.5 lg:h-3.5 bg-primary absolute -top-2.5 -left-2.5 lg:-top-1.5 lg:-left-1.5 rounded-sm rotate-45 pointer-events-auto cursor-ew-resize hover:scale-110 active:scale-95 transition-transform shadow-md" 
           />
         </div>
 
@@ -259,7 +259,7 @@ export default function Timeline({
                   {seg.block && (
                     <div
                       onPointerDown={(e) => handleTrimStart(e, seg.block!.id, "left")}
-                      className="absolute left-0 top-0 bottom-0 w-2.5 hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-l-lg flex items-center justify-center z-10"
+                      className="absolute left-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-l-lg flex items-center justify-center z-10"
                       title="Drag to trim start"
                     >
                       <div className="w-[1.5px] h-3.5 bg-white/40" />
@@ -272,7 +272,7 @@ export default function Timeline({
                   {seg.block && (
                     <div
                       onPointerDown={(e) => handleTrimStart(e, seg.block!.id, "right")}
-                      className="absolute right-0 top-0 bottom-0 w-2.5 hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-r-lg flex items-center justify-center z-10"
+                      className="absolute right-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-r-lg flex items-center justify-center z-10"
                       title="Drag to trim end"
                     >
                       <div className="w-[1.5px] h-3.5 bg-white/40" />
