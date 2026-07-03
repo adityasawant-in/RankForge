@@ -30,17 +30,43 @@ export default function Header() {
       const res = await fetch(`/api/export?projectId=${project.id}`);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to render video");
+        throw new Error(errorData.error || "Failed to start export job");
       }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${project.name.replace(/\s+/g, "_")}.mp4`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      const { jobId } = await res.json();
+      
+      // Poll for job completion
+      await new Promise<void>((resolve, reject) => {
+        const intervalId = setInterval(async () => {
+          try {
+            const statusRes = await fetch(`/api/export/status?jobId=${jobId}`);
+            if (!statusRes.ok) {
+              clearInterval(intervalId);
+              reject(new Error("Failed to check export status"));
+              return;
+            }
+            const job = await statusRes.json();
+            if (job.status === "completed") {
+              clearInterval(intervalId);
+              
+              const downloadUrl = `/api/export/download?jobId=${jobId}`;
+              const link = document.createElement("a");
+              link.href = downloadUrl;
+              link.download = job.filename || `${project.name.replace(/\s+/g, "_")}.mp4`;
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              resolve();
+            } else if (job.status === "failed") {
+              clearInterval(intervalId);
+              reject(new Error(job.error || "Video compilation failed on server"));
+            }
+          } catch (err) {
+            clearInterval(intervalId);
+            reject(err);
+          }
+        }, 2000);
+      });
+
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Failed to export video. Please make sure all video links are downloaded correctly.");

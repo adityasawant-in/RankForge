@@ -411,14 +411,9 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
   }
 }
 
-router.get("/", async (req, res) => {
-  const db = await readDb();
-  const { projectId } = req.query;
-  if (!projectId) return res.status(400).json({ error: "projectId is required" });
-  
-  const project = (db.projects || []).find((p) => p.id === projectId);
-  if (!project) return res.status(404).json({ error: "Project not found" });
-  
+const exportJobs = new Map();
+
+async function runExportInBackground(jobId, projectId, project, db) {
   let blocks = [...db.blocks].filter((b) => b.projectId === projectId).sort((a, b) => a.rank - b.rank);
 
   if (project.shuffleBlocks) {
@@ -474,7 +469,7 @@ router.get("/", async (req, res) => {
     }
 
     if (tempFiles.length === 0) {
-      return res.status(400).json({ error: "No ranking blocks to export" });
+      throw new Error("No ranking blocks to export");
     }
 
     // 2. Concatenate segments (applying transitions if configured)
@@ -580,24 +575,12 @@ router.get("/", async (req, res) => {
       fs.renameSync(mergedVideoPath, finalOutPath);
     }
 
-    // 5. Send file to client
     const outputFilename = `${project.name.replace(/\s+/g, "_")}.mp4`;
-    res.setHeader("Content-Type", "video/mp4");
-    res.setHeader("Content-Disposition", `attachment; filename="${outputFilename}"`);
-    
-    res.sendFile(finalOutPath, (err) => {
-      if (err) console.error("Error sending file:", err);
-      // Cleanup temp directory after transfer
-      try {
-        fs.rmSync(runTempDir, { recursive: true, force: true });
-      } catch (rmErr) {
-        console.error("Error deleting temp dir:", rmErr);
-      }
-    });
-
+    exportJobs.set(jobId, { status: "completed", filePath: finalOutPath, filename: outputFilename });
+    console.log(`[SERVER] Export job ${jobId} completed successfully.`);
   } catch (err) {
-    console.error("Export process failed:", err);
-    res.status(500).json({ error: `Video export failed: ${err.message}` });
+    console.error(`Export process failed for job ${jobId}:`, err);
+    exportJobs.set(jobId, { status: "failed", error: err.message });
     // Cleanup temp files on failure
     try {
       fs.rmSync(runTempDir, { recursive: true, force: true });
@@ -605,6 +588,54 @@ router.get("/", async (req, res) => {
       console.error("Cleanup failed:", rmErr);
     }
   }
+}
+
+router.get("/", async (req, res) => {
+  const db = await readDb();
+  const { projectId } = req.query;
+  if (!projectId) return res.status(400).json({ error: "projectId is required" });
+  
+  const project = (db.projects || []).find((p) => p.id === projectId);
+  if (!project) return res.status(404).json({ error: "Project not found" });
+
+  const jobId = nanoid(8);
+  exportJobs.set(jobId, { status: "pending", error: null });
+
+  runExportInBackground(jobId, projectId, project, db).catch(err => {
+    console.error("Uncaught background export error:", err);
+  });
+
+  res.status(202).json({ jobId });
+});
+
+router.get("/status", (req, res) => {
+  const { jobId } = req.query;
+  if (!jobId) return res.status(400).json({ error: "jobId is required" });
+  const job = exportJobs.get(jobId);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  res.json(job);
+});
+
+router.get("/download", (req, res) => {
+  const { jobId } = req.query;
+  if (!jobId) return res.status(400).json({ error: "jobId is required" });
+  const job = exportJobs.get(jobId);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  if (job.status !== "completed") return res.status(400).json({ error: "Job is not completed yet" });
+
+  res.setHeader("Content-Type", "video/mp4");
+  res.setHeader("Content-Disposition", `attachment; filename="${job.filename}"`);
+  
+  res.sendFile(job.filePath, (err) => {
+    if (err) console.error("Error sending file:", err);
+    try {
+      const runTempDir = path.dirname(job.filePath);
+      fs.rmSync(runTempDir, { recursive: true, force: true });
+      exportJobs.delete(jobId);
+    } catch (rmErr) {
+      console.error("Cleanup failed:", rmErr);
+    }
+  });
 });
 
 export default router;
