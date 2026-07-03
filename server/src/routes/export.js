@@ -156,6 +156,12 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
     .replace(/\\/g, "/")
     .replace(/:/g, "\\:");
 
+  const fontCheckPath = fontFile.replace(/\\:/g, ":");
+  if (!fs.existsSync(fontCheckPath)) {
+    console.error(`[EXPORT] Font file check failed! Checked path: ${fontCheckPath}`);
+    throw new Error(`System font file is missing on server: ${fontCheckPath}`);
+  }
+
   const subBgColorVal = parseFfmpegColor(project.subtitleBgColor || "#0b0e14");
 
   // 1. Draw top header banner and bottom footer banner
