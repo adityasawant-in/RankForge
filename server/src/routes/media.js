@@ -146,41 +146,69 @@ function runYtDlp(args) {
 }
 
 async function downloadViaCobalt(url, outputPath) {
-  console.log(`[COBALT] Attempting direct download for: ${url}`);
-  const response = await fetch("https://api.cobalt.tools/", {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      url: url
-    })
-  });
+  const cobaltEndpoints = [];
+  if (process.env.COBALT_API_URL) {
+    cobaltEndpoints.push(...process.env.COBALT_API_URL.split(",").map(u => u.trim()));
+  }
+  // Hardcoded list of working community instances as fallback
+  cobaltEndpoints.push(
+    "https://api.cobalt.blackcat.sweeux.org/",
+    "https://cobaltapi.kittycat.boo/",
+    "https://rue-cobalt.xenon.zone/",
+    "https://dog.kittycat.boo/",
+    "https://api.cobalt.tools/"
+  );
 
-  if (!response.ok) {
-    throw new Error(`Cobalt API failed with status ${response.status}`);
+  let lastError = null;
+  for (const endpoint of cobaltEndpoints) {
+    try {
+      console.log(`[COBALT] Attempting direct download using endpoint: ${endpoint} for URL: ${url}`);
+      const targetUrl = endpoint.endsWith("/") ? endpoint : `${endpoint}/`;
+      
+      const response = await fetch(targetUrl, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          url: url
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        throw new Error(`Failed with status ${response.status}: ${errText}`);
+      }
+
+      const data = await response.json();
+      if (data.status === "error") {
+        const errorMsg = data.text || (data.error && data.error.code) || "Cobalt API returned error status";
+        throw new Error(errorMsg);
+      }
+
+      const streamUrl = data.url;
+      if (!streamUrl) {
+        throw new Error("Cobalt API did not return a stream URL");
+      }
+
+      console.log(`[COBALT] Downloading stream from: ${streamUrl}`);
+      const fileRes = await fetch(streamUrl);
+      if (!fileRes.ok) {
+        throw new Error(`Failed to download stream from Cobalt: ${fileRes.statusText}`);
+      }
+
+      const buffer = await fileRes.arrayBuffer();
+      fs.writeFileSync(outputPath, Buffer.from(buffer));
+      console.log(`[COBALT] Download completed successfully via Cobalt (${endpoint}) to: ${outputPath}`);
+      return;
+    } catch (err) {
+      console.warn(`[COBALT] Endpoint ${endpoint} failed: ${err.message}`);
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  if (data.status === "error") {
-    throw new Error(data.text || "Cobalt API returned error status");
-  }
-
-  const streamUrl = data.url;
-  if (!streamUrl) {
-    throw new Error("Cobalt API did not return a stream URL");
-  }
-
-  console.log(`[COBALT] Downloading stream from: ${streamUrl}`);
-  const fileRes = await fetch(streamUrl);
-  if (!fileRes.ok) {
-    throw new Error(`Failed to download stream from Cobalt: ${fileRes.statusText}`);
-  }
-
-  const buffer = await fileRes.arrayBuffer();
-  fs.writeFileSync(outputPath, Buffer.from(buffer));
-  console.log(`[COBALT] Download completed successfully via Cobalt to: ${outputPath}`);
+  throw new Error(lastError ? lastError.message : "No Cobalt endpoints succeeded");
 }
 
 function downloadVideo(url, outputPath) {
