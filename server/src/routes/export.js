@@ -330,9 +330,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
       ? `[0:v]split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=${blurSize}:2,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v_drawn];${emojiFilterChain}[v]`
       : `[0:v]split[bg][fg];[bg]scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,boxblur=${blurSize}:2,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v]`;
 
-    const filterScriptPath = (tempOut + ".filter.txt").replace(/\\/g, "/");
-    fs.writeFileSync(filterScriptPath, filterComplex, "utf8");
-
     const audioArgs = speed !== 1.0 ? ["-af", getAtempoFilter(speed)] : [];
 
     try {
@@ -342,7 +339,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
         "-ss", String(trimStart),
         "-t", String(inputDuration),
         "-i", videoPath,
-        "-filter_complex_script", filterScriptPath,
+        "-filter_complex", filterComplex,
         "-map", "[v]",
         "-map", "0:a",
         "-c:v", "libx264",
@@ -367,7 +364,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
         "-f", "lavfi",
         "-i", "anullsrc=r=44100:cl=stereo",
         "-t", String(duration),
-        "-filter_complex_script", filterScriptPath,
+        "-filter_complex", filterComplex,
         "-map", "[v]",
         "-map", "1:a",
         "-c:v", "libx264",
@@ -394,9 +391,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
       ? `[0:v]${drawTextChain}[v_drawn];${emojiFilterChain}[v]`
       : `[0:v]${drawTextChain}[v]`;
 
-    const filterScriptPathSlate = (tempOut + ".filter.txt").replace(/\\/g, "/");
-    fs.writeFileSync(filterScriptPathSlate, filterComplex, "utf8");
-
     const args = [
       "-y",
       "-f", "lavfi",
@@ -404,7 +398,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
       "-f", "lavfi",
       "-i", "anullsrc=r=44100:cl=stereo",
       "-t", String(duration),
-      "-filter_complex_script", filterScriptPathSlate,
+      "-filter_complex", filterComplex,
       "-map", "[v]",
       "-map", "1:a",
       "-c:v", "libx264",
