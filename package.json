@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "workspaces": ["client", "server"],
   "scripts": {
+    "start": "node server/src/index.js",
     "dev": "concurrently -k -n SERVER,CLIENT -c green,blue \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client"
   },
