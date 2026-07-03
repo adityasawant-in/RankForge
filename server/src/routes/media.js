@@ -97,7 +97,9 @@ function runYtDlp(args) {
 
 function downloadVideo(url, outputPath) {
   return new Promise(async (resolve, reject) => {
-    const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
+    const cookieSources = (process.platform === "win32")
+      ? [null, "chrome", "edge", "firefox", "brave", "opera"]
+      : [null];
     let lastError = null;
 
     for (const source of cookieSources) {
@@ -105,6 +107,9 @@ function downloadVideo(url, outputPath) {
         const args = ["-f", "best[ext=mp4]/best", "-o", outputPath];
         if (source) {
           args.push("--cookies-from-browser", source);
+        }
+        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+          args.push("--extractor-args", "youtube:player_client=web,android");
         }
         args.push(url);
 
@@ -117,18 +122,23 @@ function downloadVideo(url, outputPath) {
       }
     }
 
-    reject(new Error(`Failed to download video from URL after trying all browser cookie backups. Error: ${lastError?.message}`));
+    reject(new Error(`Failed to download video from URL. Error: ${lastError?.message}`));
   });
 }
 
 function getVideoTitle(url) {
   return new Promise(async (resolve) => {
-    const cookieSources = [null, "chrome", "edge", "firefox", "brave", "opera"];
+    const cookieSources = (process.platform === "win32")
+      ? [null, "chrome", "edge", "firefox", "brave", "opera"]
+      : [null];
     for (const source of cookieSources) {
       try {
         const args = ["--get-title"];
         if (source) {
           args.push("--cookies-from-browser", source);
+        }
+        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+          args.push("--extractor-args", "youtube:player_client=web,android");
         }
         args.push(url);
         const title = await runYtDlp(args);
