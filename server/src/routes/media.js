@@ -147,7 +147,7 @@ function runYtDlp(args) {
 
 async function downloadViaCobalt(url, outputPath) {
   console.log(`[COBALT] Attempting direct download for: ${url}`);
-  const response = await fetch("https://api.cobalt.tools/api/json", {
+  const response = await fetch("https://api.cobalt.tools/", {
     method: "POST",
     headers: {
       "Accept": "application/json",
