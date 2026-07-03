@@ -10,7 +10,7 @@ let pool = null;
 if (process.env.DATABASE_URL) {
   pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.includes("supabase.co")
+    ssl: process.env.DATABASE_URL.includes("supabase")
       ? { rejectUnauthorized: false }
       : false
   });
