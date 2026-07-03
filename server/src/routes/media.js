@@ -93,7 +93,11 @@ function runYtDlp(args) {
     finalArgs.push("-v");
 
     let cookiesPath = null;
-    if (process.env.YOUTUBE_COOKIES) {
+    const localCookies = path.join(__dirname, "..", "..", "cookies.txt");
+    if (fs.existsSync(localCookies)) {
+      console.log(`[YT-DLP] Using local secret cookies file: ${localCookies}`);
+      finalArgs.push("--cookies", localCookies);
+    } else if (process.env.YOUTUBE_COOKIES) {
       cookiesPath = path.join(TEMP_DIR, `cookies-${Date.now()}-${nanoid(4)}.txt`);
       try {
         fs.writeFileSync(cookiesPath, process.env.YOUTUBE_COOKIES, "utf8");
