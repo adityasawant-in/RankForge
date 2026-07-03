@@ -9,7 +9,9 @@ import { execFile } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DATA_DIR = path.join(__dirname, "..", "..", "content", "video_data");
+const TEMP_DIR = path.join(__dirname, "..", "..", "temp");
 if (!fs.existsSync(VIDEO_DATA_DIR)) fs.mkdirSync(VIDEO_DATA_DIR, { recursive: true });
+if (!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, VIDEO_DATA_DIR),
@@ -79,14 +81,31 @@ function runYtDlp(args) {
     let cmd, finalArgs;
     if (process.platform !== "win32" && fs.existsSync(localPath)) {
       cmd = localPath;
-      finalArgs = args;
+      finalArgs = [...args];
     } else {
       cmd = process.platform === "win32" ? "python" : "python3";
       finalArgs = ["-m", "yt_dlp", ...args];
     }
 
+    let cookiesPath = null;
+    if (process.env.YOUTUBE_COOKIES) {
+      cookiesPath = path.join(TEMP_DIR, `cookies-${Date.now()}-${nanoid(4)}.txt`);
+      try {
+        fs.writeFileSync(cookiesPath, process.env.YOUTUBE_COOKIES, "utf8");
+        finalArgs.push("--cookies", cookiesPath);
+      } catch (cErr) {
+        console.error("Failed to write temporary cookies file:", cErr.message);
+      }
+    }
+
     console.log(`[YT-DLP] Executing: ${cmd} ${finalArgs.join(" ")}`);
     execFile(cmd, finalArgs, (error, stdout, stderr) => {
+      if (cookiesPath && fs.existsSync(cookiesPath)) {
+        try {
+          fs.unlinkSync(cookiesPath);
+        } catch {}
+      }
+
       if (error) {
         return reject(new Error(stderr || error.message));
       }
