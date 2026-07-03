@@ -591,21 +591,31 @@ async function runExportInBackground(jobId, projectId, project, db) {
 }
 
 router.get("/", async (req, res) => {
-  const db = await readDb();
-  const { projectId } = req.query;
-  if (!projectId) return res.status(400).json({ error: "projectId is required" });
-  
-  const project = (db.projects || []).find((p) => p.id === projectId);
-  if (!project) return res.status(404).json({ error: "Project not found" });
+  try {
+    console.log(`[EXPORT] Received export request for projectId: ${req.query.projectId}`);
+    const db = await readDb();
+    const { projectId } = req.query;
+    if (!projectId) return res.status(400).json({ error: "projectId is required" });
+    
+    const project = (db.projects || []).find((p) => p.id === projectId);
+    if (!project) {
+      console.warn(`[EXPORT] Project not found in database: ${projectId}`);
+      return res.status(404).json({ error: "Project not found" });
+    }
 
-  const jobId = nanoid(8);
-  exportJobs.set(jobId, { status: "pending", error: null });
+    const jobId = nanoid(8);
+    exportJobs.set(jobId, { status: "pending", error: null });
 
-  runExportInBackground(jobId, projectId, project, db).catch(err => {
-    console.error("Uncaught background export error:", err);
-  });
+    console.log(`[EXPORT] Starting background job ${jobId} for project: ${project.name}`);
+    runExportInBackground(jobId, projectId, project, db).catch(err => {
+      console.error("Uncaught background export error:", err);
+    });
 
-  res.status(202).json({ jobId });
+    res.status(202).json({ jobId });
+  } catch (err) {
+    console.error("[EXPORT] Failed to initialize export:", err);
+    res.status(500).json({ error: `Failed to start export: ${err.message}` });
+  }
 });
 
 router.get("/status", (req, res) => {
