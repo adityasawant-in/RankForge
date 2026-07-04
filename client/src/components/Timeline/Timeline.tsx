@@ -75,10 +75,12 @@ export default function Timeline({
     const onPointerUp = () => {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerUp);
     };
 
     document.addEventListener("pointermove", onPointerMove, { passive: false });
     document.addEventListener("pointerup", onPointerUp, { passive: false });
+    document.addEventListener("pointercancel", onPointerUp, { passive: false });
   };
 
   const activeSeg = useMemo(() => {
@@ -108,12 +110,17 @@ export default function Timeline({
   };
 
   const handleTrimStart = (
-    e: React.PointerEvent,
+    e: React.PointerEvent<HTMLDivElement>,
     blockId: string,
     mode: "left" | "right"
   ) => {
     e.stopPropagation();
     e.preventDefault();
+
+    const targetEl = e.currentTarget;
+    const pointerId = e.pointerId;
+    targetEl.setPointerCapture(pointerId);
+
     const blockToTrim = blocks.find((b) => b.id === blockId);
     if (!blockToTrim) return;
 
@@ -148,12 +155,17 @@ export default function Timeline({
     };
 
     const onPointerUp = () => {
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
+      try {
+        targetEl.releasePointerCapture(pointerId);
+      } catch (err) {}
+      targetEl.removeEventListener("pointermove", onPointerMove);
+      targetEl.removeEventListener("pointerup", onPointerUp);
+      targetEl.removeEventListener("pointercancel", onPointerUp);
     };
 
-    document.addEventListener("pointermove", onPointerMove, { passive: false });
-    document.addEventListener("pointerup", onPointerUp, { passive: false });
+    targetEl.addEventListener("pointermove", onPointerMove);
+    targetEl.addEventListener("pointerup", onPointerUp);
+    targetEl.addEventListener("pointercancel", onPointerUp);
   };
 
   const rulerMarks = [];
