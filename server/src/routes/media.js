@@ -150,13 +150,9 @@ async function downloadViaCobalt(url, outputPath) {
   if (process.env.COBALT_API_URL) {
     cobaltEndpoints.push(...process.env.COBALT_API_URL.split(",").map(u => u.trim()));
   }
-  // Hardcoded list of working community instances as fallback
   cobaltEndpoints.push(
-    "https://api.cobalt.blackcat.sweeux.org/",
-    "https://cobaltapi.kittycat.boo/",
     "https://rue-cobalt.xenon.zone/",
-    "https://dog.kittycat.boo/",
-    "https://api.cobalt.tools/"
+    "https://dog.kittycat.boo/"
   );
 
   let lastError = null;
@@ -201,7 +197,7 @@ async function downloadViaCobalt(url, outputPath) {
 
       console.log(`[COBALT] Downloading stream from: ${streamUrl}`);
       const fileController = new AbortController();
-      fileTimeoutId = setTimeout(() => fileController.abort(), 15000);
+      fileTimeoutId = setTimeout(() => fileController.abort(), 45000);
 
       const fileRes = await fetch(streamUrl, {
         signal: fileController.signal
