@@ -306,12 +306,16 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     const isAudio = req.file.mimetype.startsWith("audio");
     let assetUrl = `/uploads/${req.file.filename}`;
 
-    // Upload to Supabase Storage if configured
-    const cloudUrl = await uploadToSupabase(req.file.path, req.file.filename, req.file.mimetype);
-    if (cloudUrl) {
-      assetUrl = cloudUrl;
-      // Clean up the local file immediately
-      fs.unlinkSync(req.file.path);
+    try {
+      // Upload to Supabase Storage if configured
+      const cloudUrl = await uploadToSupabase(req.file.path, req.file.filename, req.file.mimetype);
+      if (cloudUrl) {
+        assetUrl = cloudUrl;
+        // Clean up the local file immediately
+        fs.unlinkSync(req.file.path);
+      }
+    } catch (supabaseErr) {
+      console.warn("[STORAGE] Supabase upload failed, falling back to local storage:", supabaseErr.message);
     }
 
     const asset = {
@@ -350,12 +354,16 @@ router.post("/import-url", async (req, res) => {
     const db = await readDb(req.user.id);
     let assetUrl = `/uploads/${filename}`;
 
-    // Upload to Supabase Storage if configured
-    const cloudUrl = await uploadToSupabase(outputPath, filename, "video/mp4");
-    if (cloudUrl) {
-      assetUrl = cloudUrl;
-      // Clean up the local file immediately
-      fs.unlinkSync(outputPath);
+    try {
+      // Upload to Supabase Storage if configured
+      const cloudUrl = await uploadToSupabase(outputPath, filename, "video/mp4");
+      if (cloudUrl) {
+        assetUrl = cloudUrl;
+        // Clean up the local file immediately
+        fs.unlinkSync(outputPath);
+      }
+    } catch (supabaseErr) {
+      console.warn("[STORAGE] Supabase upload failed, falling back to local storage:", supabaseErr.message);
     }
 
     const asset = {
