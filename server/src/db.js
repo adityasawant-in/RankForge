@@ -425,15 +425,16 @@ export async function createUser(username, passwordHash) {
 
 const locks = new Map();
 
-export function acquireLock(userId) {
+export async function acquireLock(userId) {
+  const previous = locks.get(userId) || Promise.resolve();
+  
   let release;
   const promise = new Promise((resolve) => {
     release = resolve;
   });
   
-  const current = locks.get(userId) || Promise.resolve();
-  const next = current.then(() => release);
   locks.set(userId, promise);
   
-  return current;
+  await previous;
+  return release;
 }
