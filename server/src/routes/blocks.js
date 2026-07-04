@@ -70,6 +70,35 @@ router.delete("/:id", async (req, res) => {
   res.status(204).end();
 });
 
+// PUT bulk update blocks
+router.put("/bulk", async (req, res) => {
+  const db = await readDb(req.user.id);
+  const { blocks } = req.body;
+  if (!Array.isArray(blocks)) {
+    return res.status(400).json({ error: "blocks array is required" });
+  }
+
+  let modified = false;
+  for (const item of blocks) {
+    const idx = db.blocks.findIndex((b) => b.id === item.id);
+    if (idx !== -1) {
+      db.blocks[idx] = { ...db.blocks[idx], ...item.patch, id: db.blocks[idx].id };
+      modified = true;
+    }
+  }
+
+  if (modified) {
+    if (blocks.length > 0) {
+      const firstBlock = db.blocks.find(b => b.id === blocks[0].id);
+      if (firstBlock) {
+        normalizeRanks(db, firstBlock.projectId);
+      }
+    }
+    await writeDb(db, req.user.id);
+  }
+  res.json({ ok: true });
+});
+
 // bulk reorder: [{id, rank}, ...]
 router.post("/reorder", async (req, res) => {
   const db = await readDb(req.user.id);

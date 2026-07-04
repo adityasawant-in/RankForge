@@ -211,20 +211,21 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     try {
       await api.updateProject(p.id, p);
       setProjects((prev) => prev.map((x) => (x.id === p.id ? p : x)));
-      await Promise.all(
-        b.map((blk) =>
-          api.updateBlock(blk.id, {
-            rank: blk.rank,
-            title: blk.title,
-            duration: blk.duration,
-            mediaAssetId: blk.mediaAssetId,
-            playbackSpeed: blk.playbackSpeed,
-            trimStart: blk.trimStart,
-            transitionType: blk.transitionType,
-            transitionDuration: blk.transitionDuration
-          })
-        )
-      );
+      
+      const bulkPatches = b.map((blk) => ({
+        id: blk.id,
+        patch: {
+          rank: blk.rank,
+          title: blk.title,
+          duration: blk.duration,
+          mediaAssetId: blk.mediaAssetId,
+          playbackSpeed: blk.playbackSpeed,
+          trimStart: blk.trimStart,
+          transitionType: blk.transitionType,
+          transitionDuration: blk.transitionDuration
+        }
+      }));
+      await api.bulkUpdateBlocks(bulkPatches);
     } catch (err: any) {
       console.error("Failed to save changes:", err);
       setSaveError(err.message || "Failed to save changes");

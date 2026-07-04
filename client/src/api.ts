@@ -43,6 +43,7 @@ export const api = {
   updateBlock: (id: string, data: Partial<RankingBlock>) => req<RankingBlock>(`/blocks/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteBlock: (id: string) => req<void>(`/blocks/${id}`, { method: "DELETE" }),
   reorderBlocks: (projectId: string, order: { id: string; rank: number }[]) => req<RankingBlock[]>(`/blocks/reorder?projectId=${projectId}`, { method: "POST", body: JSON.stringify({ order }) }),
+  bulkUpdateBlocks: (blocks: { id: string; patch: Partial<RankingBlock> }[]) => req<void>("/blocks/bulk", { method: "PUT", body: JSON.stringify({ blocks }) }),
 
   getMedia: () => req<MediaAsset[]>("/media"),
   uploadMedia: (file: File) => {
