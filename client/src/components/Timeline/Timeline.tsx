@@ -68,6 +68,7 @@ export default function Timeline({
     updatePlayheadFromX(e.clientX);
 
     const onPointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
       updatePlayheadFromX(moveEvent.clientX);
     };
 
@@ -76,8 +77,8 @@ export default function Timeline({
       document.removeEventListener("pointerup", onPointerUp);
     };
 
-    document.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.addEventListener("pointerup", onPointerUp, { passive: true });
+    document.addEventListener("pointermove", onPointerMove, { passive: false });
+    document.addEventListener("pointerup", onPointerUp, { passive: false });
   };
 
   const handleSplit = async () => {
@@ -119,6 +120,7 @@ export default function Timeline({
     const startTrimStart = blockToTrim.trimStart || 0;
 
     const onPointerMove = (moveEvent: PointerEvent) => {
+      moveEvent.preventDefault();
       const deltaX = moveEvent.clientX - startX;
       const deltaSec = deltaX / pxPerSec;
 
@@ -148,8 +150,8 @@ export default function Timeline({
       document.removeEventListener("pointerup", onPointerUp);
     };
 
-    document.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.addEventListener("pointerup", onPointerUp, { passive: true });
+    document.addEventListener("pointermove", onPointerMove, { passive: false });
+    document.addEventListener("pointerup", onPointerUp, { passive: false });
   };
 
   const rulerMarks = [];
@@ -215,9 +217,9 @@ export default function Timeline({
         </div>
       </div>
 
-      <div ref={trackAreaRef} className="flex-1 overflow-x-auto overflow-y-hidden relative" onClick={handleRulerClick}>
+      <div ref={trackAreaRef} className="flex-1 overflow-x-auto overflow-y-hidden relative select-none" onClick={handleRulerClick}>
         <div 
-          className="h-6 border-b border-outline/10 flex items-end px-2 text-[10px] text-on-surface-variant font-mono relative cursor-ew-resize select-none" 
+          className="h-6 border-b border-outline/10 flex items-end px-2 text-[10px] text-on-surface-variant font-mono relative cursor-ew-resize select-none touch-none" 
           style={{ width: duration * pxPerSec + 40 }}
           onPointerDown={handleScrubStart}
         >
@@ -234,7 +236,7 @@ export default function Timeline({
         >
           <div 
             onPointerDown={handleScrubStart}
-            className="w-5 h-5 lg:w-3.5 lg:h-3.5 bg-primary absolute -top-2.5 -left-2.5 lg:-top-1.5 lg:-left-1.5 rounded-sm rotate-45 pointer-events-auto cursor-ew-resize hover:scale-110 active:scale-95 transition-transform shadow-md" 
+            className="w-5 h-5 lg:w-3.5 lg:h-3.5 bg-primary absolute -top-2.5 -left-2.5 lg:-top-1.5 lg:-left-1.5 rounded-sm rotate-45 pointer-events-auto cursor-ew-resize hover:scale-110 active:scale-95 transition-transform shadow-md touch-none" 
           />
         </div>
 
@@ -259,7 +261,7 @@ export default function Timeline({
                   {seg.block && (
                     <div
                       onPointerDown={(e) => handleTrimStart(e, seg.block!.id, "left")}
-                      className="absolute left-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-l-lg flex items-center justify-center z-10"
+                      className="absolute left-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-l-lg flex items-center justify-center z-10 touch-none"
                       title="Drag to trim start"
                     >
                       <div className="w-[1.5px] h-3.5 bg-white/40" />
@@ -272,7 +274,7 @@ export default function Timeline({
                   {seg.block && (
                     <div
                       onPointerDown={(e) => handleTrimStart(e, seg.block!.id, "right")}
-                      className="absolute right-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-r-lg flex items-center justify-center z-10"
+                      className="absolute right-0 top-0 bottom-0 w-5 lg:w-2.5 hover:w-6 lg:hover:w-3.5 cursor-ew-resize bg-white/10 hover:bg-white/40 active:bg-primary/50 transition-all rounded-r-lg flex items-center justify-center z-10 touch-none"
                       title="Drag to trim end"
                     >
                       <div className="w-[1.5px] h-3.5 bg-white/40" />
