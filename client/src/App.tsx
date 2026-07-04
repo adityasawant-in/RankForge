@@ -13,30 +13,7 @@ export default function App() {
   const [playhead, setPlayhead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(360);
-
-  if (!isAuthenticated) {
-    return <AuthScreen />;
-  }
-
-  const handleDragPanelStart = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = leftPanelWidth;
-
-    const onPointerMove = (moveEvent: PointerEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const newWidth = Math.max(280, Math.min(600, startWidth + deltaX));
-      setLeftPanelWidth(newWidth);
-    };
-
-    const onPointerUp = () => {
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
-    };
-
-    document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
-  };
+  const [activeMobileTab, setActiveMobileTab] = useState<"settings" | "timeline">("settings");
 
   const segments = useMemo(() => buildSegments(blocks || []), [blocks]);
   const duration = useMemo(() => totalDuration(segments), [segments]);
@@ -92,7 +69,29 @@ export default function App() {
     }
   }, [isPlaying, playhead, musicAsset?.url]);
 
-  const [activeMobileTab, setActiveMobileTab] = useState<"settings" | "timeline">("settings");
+  const handleDragPanelStart = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = leftPanelWidth;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newWidth = Math.max(280, Math.min(600, startWidth + deltaX));
+      setLeftPanelWidth(newWidth);
+    };
+
+    const onPointerUp = () => {
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+    };
+
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+  };
+
+  if (!isAuthenticated) {
+    return <AuthScreen />;
+  }
 
   if (loading || !project) {
     return (
