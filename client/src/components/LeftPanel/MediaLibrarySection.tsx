@@ -7,9 +7,10 @@ export default function MediaLibrarySection() {
   const [open, setOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [selectedBlockId, setSelectedBlockId] = useState(blocks[0]?.id || "");
+  const [selectedBlockId, setSelectedBlockId] = useState("");
   const videoAssets = media.filter((m) => m.type === "video");
   const sortedBlocks = [...blocks].sort((a, b) => a.rank - b.rank);
+  const activeBlockId = selectedBlockId || sortedBlocks[0]?.id || "";
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -21,7 +22,7 @@ export default function MediaLibrarySection() {
   };
 
   const assign = (assetId: string) => {
-    if (!selectedBlockId) return;
+    if (!activeBlockId) return;
     const asset = media.find((m) => m.id === assetId);
     if (!asset) return;
 
@@ -29,14 +30,14 @@ export default function MediaLibrarySection() {
     video.src = getAssetUrl(asset.url);
     video.onloadedmetadata = () => {
       const dur = Math.round(video.duration) || 10;
-      updateBlock(selectedBlockId, {
+      updateBlock(activeBlockId, {
         mediaAssetId: assetId,
         duration: dur,
         trimStart: 0
       });
     };
     video.onerror = () => {
-      updateBlock(selectedBlockId, {
+      updateBlock(activeBlockId, {
         mediaAssetId: assetId,
         duration: 10,
         trimStart: 0
@@ -74,7 +75,7 @@ export default function MediaLibrarySection() {
             <div className="flex items-center gap-2 bg-surface-variant/20 p-2 rounded-lg border border-outline/10">
               <span className="text-[10px] text-on-surface-variant shrink-0 font-bold">Assign to:</span>
               <select
-                value={selectedBlockId}
+                value={activeBlockId}
                 onChange={(e) => setSelectedBlockId(e.target.value)}
                 className="flex-1 bg-surface-container border border-outline/25 rounded px-2 py-1 text-[11px] text-white outline-none focus:border-primary"
               >
