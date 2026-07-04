@@ -357,19 +357,7 @@ router.post("/import-url", async (req, res) => {
     }
 
     const db = await readDb(req.user.id);
-    let assetUrl = `/uploads/${filename}`;
-
-    try {
-      // Upload to Supabase Storage if configured
-      const cloudUrl = await uploadToSupabase(outputPath, filename, "video/mp4");
-      if (cloudUrl) {
-        assetUrl = cloudUrl;
-        // Clean up the local file immediately
-        fs.unlinkSync(outputPath);
-      }
-    } catch (supabaseErr) {
-      console.warn("[STORAGE] Supabase upload failed, falling back to local storage:", supabaseErr.message);
-    }
+    const assetUrl = `/uploads/${filename}`;
 
     const asset = {
       id: "med-" + nanoid(8),
