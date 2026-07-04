@@ -212,6 +212,11 @@ async function downloadViaCobalt(url, outputPath) {
         throw new Error(`Failed to download stream from Cobalt: ${fileRes.statusText}`);
       }
 
+      const contentType = fileRes.headers.get("content-type") || "";
+      if (contentType.startsWith("image/") || contentType.startsWith("text/html")) {
+        throw new Error("Instagram is blocking the video stream and returned a static image/HTML page instead. Please download the file and upload it manually.");
+      }
+
       const buffer = await fileRes.arrayBuffer();
       fs.writeFileSync(outputPath, Buffer.from(buffer));
       console.log(`[COBALT] Download completed successfully via Cobalt (${endpoint}) to: ${outputPath}`);
