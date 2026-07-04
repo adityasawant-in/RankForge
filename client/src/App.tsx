@@ -94,7 +94,7 @@ export default function App() {
 
   const [activeMobileTab, setActiveMobileTab] = useState<"settings" | "timeline">("settings");
 
-  if (loading) {
+  if (loading || !project) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background text-on-surface gap-4 font-sans select-none">
         {/* Loading Spinner */}
