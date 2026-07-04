@@ -18,6 +18,7 @@ interface Ctx {
   canRedo: boolean;
   isAuthenticated: boolean;
   username: string | null;
+  saveError: string | null;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -56,6 +57,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [media, setMedia] = useState<MediaAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const history = useRef<Snapshot[]>([]);
   const historyIndex = useRef(-1);
@@ -68,6 +70,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("activeProjectId");
     setUsername(null);
     setIsAuthenticated(false);
+    setSaveError(null);
     setProject(null);
     setProjects([]);
     setBlocks([]);
@@ -204,6 +207,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
   const persist = useCallback(async (p: Project, b: RankingBlock[]) => {
     setSaving(true);
+    setSaveError(null);
     try {
       await api.updateProject(p.id, p);
       setProjects((prev) => prev.map((x) => (x.id === p.id ? p : x)));
@@ -221,6 +225,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
           })
         )
       );
+    } catch (err: any) {
+      console.error("Failed to save changes:", err);
+      setSaveError(err.message || "Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -446,6 +453,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     canRedo: historyIndex.current < history.current.length - 1,
     isAuthenticated,
     username,
+    saveError,
     login,
     register,
     logout,

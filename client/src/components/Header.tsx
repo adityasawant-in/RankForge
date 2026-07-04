@@ -8,6 +8,7 @@ export default function Header() {
     projects,
     updateProject,
     saving,
+    saveError,
     saveNow,
     undo,
     redo,
@@ -120,7 +121,18 @@ export default function Header() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-[11px] text-on-surface-variant font-mono w-16 hidden lg:block text-right">{saving ? "Saving…" : "Saved"}</span>
+          {saveError ? (
+            <span 
+              className="text-[10px] text-error font-bold tracking-wide animate-pulse cursor-help text-right px-2" 
+              title={`Database error: ${saveError}`}
+            >
+              Save Failed!
+            </span>
+          ) : (
+            <span className="text-[11px] text-on-surface-variant font-mono w-16 hidden lg:block text-right">
+              {saving ? "Saving…" : "Saved"}
+            </span>
+          )}
           <div className="flex items-center bg-surface-container rounded-lg p-0.5 sm:p-1 border border-outline/30">
             <button
               disabled={!canUndo}
