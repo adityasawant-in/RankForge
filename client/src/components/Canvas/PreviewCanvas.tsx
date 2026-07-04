@@ -317,7 +317,10 @@ export default function PreviewCanvas({
 
             if (video.readyState >= 1) {
               const drift = Math.abs(video.currentTime - expectedTime);
-              if (!isPlaying || drift > 0.3) {
+              // Use a higher drift threshold (1.2s) when playing to prevent endless seek loops
+              // on mobile devices, while keeping it low (0.1s) for responsive scrubbing when paused.
+              const threshold = isPlaying ? 1.2 : 0.1;
+              if (drift > threshold) {
                 video.currentTime = expectedTime;
                 if (blurVideo && blurVideo.readyState >= 1) blurVideo.currentTime = expectedTime;
               }
@@ -370,6 +373,7 @@ export default function PreviewCanvas({
                 ref={videoRef}
                 src={getAssetUrl(asset.url)}
                 className="relative w-full h-full object-contain z-10"
+                playsInline
                 onLoadedMetadata={(e) => {
                   const video = e.currentTarget;
                   const videoDuration = video.duration || 0;
