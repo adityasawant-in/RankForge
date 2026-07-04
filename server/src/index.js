@@ -3,6 +3,7 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { readDb } from "./db.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import authRouter from "./routes/auth.js";
 import projectRouter from "./routes/project.js";
