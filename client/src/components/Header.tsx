@@ -23,6 +23,7 @@ export default function Header() {
   
   const [exporting, setExporting] = useState(false);
   const [showProjectsModal, setShowProjectsModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   if (!project) return null;
 
@@ -175,22 +176,61 @@ export default function Header() {
               </>
             )}
           </button>
-          <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline/50 flex items-center justify-center text-xs hidden md:flex">
-            🧑
-          </div>
-
-          <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-outline/25 shrink-0">
-            <span className="text-[10px] sm:text-xs font-bold text-primary max-w-[80px] truncate" title={username || ""}>
-              {username}
-            </span>
+          {/* User Menu Dropdown Toggle */}
+          <div className="relative shrink-0 flex items-center pl-2 border-l border-outline/25">
             <button
-              type="button"
-              onClick={logout}
-              className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant hover:text-white transition-colors flex items-center justify-center"
-              title="Logout"
+              onClick={() => setShowMenu((prev) => !prev)}
+              className="flex items-center gap-1.5 p-1.5 hover:bg-surface-variant rounded-lg text-on-surface-variant hover:text-white transition-colors"
+              title="User menu"
             >
-              <span className="material-symbols-outlined text-base">logout</span>
+              <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold font-sans">
+                {username ? username.charAt(0).toUpperCase() : "U"}
+              </div>
+              <span className="material-symbols-outlined text-base">arrow_drop_down</span>
             </button>
+
+            {showMenu && (
+              <>
+                {/* Backdrop handler to close menu on outside click */}
+                <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
+                
+                {/* Menu items popover card */}
+                <div className="absolute right-0 mt-2 w-48 bg-surface-container border border-outline/30 rounded-xl shadow-2xl z-40 py-2 px-1.5 flex flex-col gap-1 font-sans">
+                  {/* Account Information display */}
+                  <div className="flex items-center gap-2 px-3 py-2 border-b border-outline/10 text-on-surface-variant select-none">
+                    <span className="material-symbols-outlined text-base text-primary/80">account_circle</span>
+                    <span className="text-xs font-semibold truncate text-white" title={username || ""}>
+                      {username}
+                    </span>
+                  </div>
+
+                  {/* Manual Save Trigger (shown only on mobile where main save button is hidden) */}
+                  <button
+                    onClick={() => {
+                      saveNow();
+                      setShowMenu(false);
+                    }}
+                    disabled={saving}
+                    className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-surface-variant text-white transition-colors disabled:opacity-50 sm:hidden"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">save</span>
+                    <span>{saving ? "Saving…" : "Save Project"}</span>
+                  </button>
+
+                  {/* Logout Action */}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setShowMenu(false);
+                    }}
+                    className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg text-xs font-semibold hover:bg-error/15 text-error transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>
