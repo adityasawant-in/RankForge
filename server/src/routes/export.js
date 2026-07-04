@@ -194,7 +194,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
   const lineHeight = titleFontSize;
   const yStart = 90 - (L * lineHeight) / 2 + 10 + titleYOffset;
   const drawParts = [];
-  let firstMatchDone = false;
 
   if (highlightTargets.length > 0) {
     lines.forEach((line, lineIdx) => {
@@ -205,12 +204,16 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
       // Track colors for each word in this line
       const wordColors = words.map((w) => {
         const clean = w.toLowerCase().trim();
-        const isTarget = highlightTargets.indexOf(clean) !== -1;
+        const matchedIdx = highlightTargets.indexOf(clean);
         let color = "white";
-        if (isTarget) {
-          color = project.highlightColor1 || "red";
-          if (firstMatchDone) color = project.highlightColor2 || "yellow";
-          firstMatchDone = true;
+        if (matchedIdx !== -1) {
+          const colors = [
+            project.highlightColor1 || "#ff3333",
+            project.highlightColor2 || "#ffff33",
+            project.highlightColor3 || "#33ff33",
+            project.highlightColor4 || "#33ffff"
+          ];
+          color = colors[matchedIdx % colors.length];
         }
         return color;
       });

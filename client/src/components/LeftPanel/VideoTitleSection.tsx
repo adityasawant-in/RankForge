@@ -69,7 +69,7 @@ export default function VideoTitleSection() {
             </div>
 
             {/* Highlight color picker items */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-3">
               <div className="space-y-1">
                 <label className="text-[9px] uppercase font-bold text-white/50 tracking-wider">
                   Highlight Color 1
@@ -96,6 +96,34 @@ export default function VideoTitleSection() {
                     onChange={(e) => updateProject({ highlightColor2: e.target.value })}
                   />
                   <span className="text-[10px] text-white/70 uppercase">Color 2</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] uppercase font-bold text-white/50 tracking-wider">
+                  Highlight Color 3
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    className="w-6 h-6 rounded cursor-pointer border border-outline/30 bg-transparent"
+                    value={project.highlightColor3 || "#33ff33"}
+                    onChange={(e) => updateProject({ highlightColor3: e.target.value })}
+                  />
+                  <span className="text-[10px] text-white/70 uppercase">Color 3</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[9px] uppercase font-bold text-white/50 tracking-wider">
+                  Highlight Color 4
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="color"
+                    className="w-6 h-6 rounded cursor-pointer border border-outline/30 bg-transparent"
+                    value={project.highlightColor4 || "#33ffff"}
+                    onChange={(e) => updateProject({ highlightColor4: e.target.value })}
+                  />
+                  <span className="text-[10px] text-white/70 uppercase">Color 4</span>
                 </div>
               </div>
             </div>

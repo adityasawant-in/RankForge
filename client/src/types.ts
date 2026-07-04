@@ -20,6 +20,8 @@ export interface Project {
   highlightWords?: string; // comma-separated keywords
   highlightColor1?: string; // hex color for first match
   highlightColor2?: string; // hex color for second match
+  highlightColor3?: string; // hex color for third match
+  highlightColor4?: string; // hex color for fourth match
   subtitleFont?: string;
   subtitleFontSize?: number;
   subtitleColor?: string;

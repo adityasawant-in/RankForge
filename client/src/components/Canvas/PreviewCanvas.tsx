@@ -251,8 +251,6 @@ export default function PreviewCanvas({
 
               const lines = rawTitle.split("\n");
 
-              let firstMatchDone = false;
-
               return lines.map((line, lineIdx) => {
                 if (!highlightStr.trim() || targets.length === 0) {
                   return <div key={lineIdx} className="w-full text-center">{line}</div>;
@@ -268,11 +266,13 @@ export default function PreviewCanvas({
                       const matchedIdx = targets.indexOf(cleanWord);
 
                       if (matchedIdx !== -1) {
-                        let color = project.highlightColor1 || "#ff3333"; // Red
-                        if (matchedIdx === 1 || firstMatchDone) {
-                          color = project.highlightColor2 || "#ffff33"; // Yellow
-                        }
-                        firstMatchDone = true;
+                        const colors = [
+                          project.highlightColor1 || "#ff3333",
+                          project.highlightColor2 || "#ffff33",
+                          project.highlightColor3 || "#33ff33",
+                          project.highlightColor4 || "#33ffff"
+                        ];
+                        const color = colors[matchedIdx % colors.length];
                         return (
                           <span key={idx} style={{ color }}>
                             {part}

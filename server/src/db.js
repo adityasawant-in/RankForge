@@ -33,6 +33,8 @@ function defaultData() {
         highlightWords: "",
         highlightColor1: "#ff3333",
         highlightColor2: "#ffff33",
+        highlightColor3: "#33ff33",
+        highlightColor4: "#33ffff",
         subtitleFont: "Geist Bold",
         subtitleFontSize: 28,
         subtitleColor: "#ffff33",
@@ -102,6 +104,8 @@ export async function readDb() {
           highlightWords: r.highlightWords,
           highlightColor1: r.highlightColor1,
           highlightColor2: r.highlightColor2,
+          highlightColor3: r.highlightColor3,
+          highlightColor4: r.highlightColor4,
           subtitleFont: r.subtitleFont,
           subtitleFontSize: r.subtitleFontSize,
           subtitleColor: r.subtitleColor,
@@ -173,10 +177,11 @@ export async function writeDb(data) {
               id, name, "videoTitle", "titleFont", "titleFontSize", "titleYOffset",
               "subtitleText", "subtitleEmoji", "backgroundMusicId", "totalDurationTarget",
               "headerBgColor", "highlightWords", "highlightColor1", "highlightColor2",
+              "highlightColor3", "highlightColor4",
               "subtitleFont", "subtitleFontSize", "subtitleColor", "subtitleBgColor", "subtitleYOffset",
               "rankListSpacing", "backdropOpacity", "backdropBlur", "rankListXPos",
               "rankListFontSize", "shuffleBlocks", "createdAt", "updatedAt"
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
             ON CONFLICT (id) DO UPDATE SET
               name = EXCLUDED.name,
               "videoTitle" = EXCLUDED."videoTitle",
@@ -191,6 +196,8 @@ export async function writeDb(data) {
               "highlightWords" = EXCLUDED."highlightWords",
               "highlightColor1" = EXCLUDED."highlightColor1",
               "highlightColor2" = EXCLUDED."highlightColor2",
+              "highlightColor3" = EXCLUDED."highlightColor3",
+              "highlightColor4" = EXCLUDED."highlightColor4",
               "subtitleFont" = EXCLUDED."subtitleFont",
               "subtitleFontSize" = EXCLUDED."subtitleFontSize",
               "subtitleColor" = EXCLUDED."subtitleColor",
@@ -208,6 +215,7 @@ export async function writeDb(data) {
             p.id, p.name, p.videoTitle || '', p.titleFont || 'Geist Bold', p.titleFontSize || 24, p.titleYOffset || 0,
             p.subtitleText || '', p.subtitleEmoji || '', p.backgroundMusicId || null, p.totalDurationTarget || 15,
             p.headerBgColor || '#000000', p.highlightWords || '', p.highlightColor1 || '#ff3333', p.highlightColor2 || '#ffff33',
+            p.highlightColor3 || '#33ff33', p.highlightColor4 || '#33ffff',
             p.subtitleFont || 'Geist Bold', p.subtitleFontSize || 28, p.subtitleColor || '#ffff33', p.subtitleBgColor || 'rgba(0,0,0,0.8)', p.subtitleYOffset || 0,
             p.rankListSpacing || 12, p.backdropOpacity || 45, p.backdropBlur || 20, p.rankListXPos || 20,
             p.rankListFontSize || 36, p.shuffleBlocks || false, p.createdAt || Date.now(), p.updatedAt || Date.now()

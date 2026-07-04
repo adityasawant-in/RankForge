@@ -21,6 +21,8 @@ CREATE TABLE projects (
   "highlightWords" TEXT DEFAULT '',
   "highlightColor1" VARCHAR(50) DEFAULT '#ff3333',
   "highlightColor2" VARCHAR(50) DEFAULT '#ffff33',
+  "highlightColor3" VARCHAR(50) DEFAULT '#33ff33',
+  "highlightColor4" VARCHAR(50) DEFAULT '#33ffff',
   "subtitleFont" VARCHAR(100) DEFAULT 'Geist Bold',
   "subtitleFontSize" INTEGER DEFAULT 28,
   "subtitleColor" VARCHAR(50) DEFAULT '#ffff33',
@@ -65,7 +67,7 @@ CREATE TABLE media (
 INSERT INTO projects (
   id, name, "videoTitle", "titleFont", "titleFontSize", "titleYOffset", 
   "subtitleText", "subtitleEmoji", "totalDurationTarget", "headerBgColor", 
-  "highlightWords", "highlightColor1", "highlightColor2", "subtitleFont", 
+  "highlightWords", "highlightColor1", "highlightColor2", "highlightColor3", "highlightColor4", "subtitleFont", 
   "subtitleFontSize", "subtitleColor", "subtitleBgColor", "subtitleYOffset", 
   "rankListSpacing", "backdropOpacity", "backdropBlur", "rankListXPos", 
   "rankListFontSize", "shuffleBlocks", "createdAt", "updatedAt"
@@ -75,7 +77,7 @@ INSERT INTO projects (
   'Ranking Best Unexpected Trickshots', 
   'Geist Bold', 24, 0, 
   'Over Excited', '😂', 15, '#000000', 
-  '', '#ff3333', '#ffff33', 'Geist Bold', 
+  '', '#ff3333', '#ffff33', '#33ff33', '#33ffff', 'Geist Bold', 
   28, '#ffff33', 'rgba(0,0,0,0.8)', 0, 
   12, 45, 20, 20, 
   36, FALSE, 1783060492117, 1783060492117
