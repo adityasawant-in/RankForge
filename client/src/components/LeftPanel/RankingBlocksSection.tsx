@@ -4,7 +4,7 @@ import RankingBlockCard from "./RankingBlockCard";
 
 export default function RankingBlocksSection() {
   const { blocks, media, addBlock, project, updateProject } = useProject();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const sorted = [...blocks].sort((a, b) => a.rank - b.rank);
 
   return (

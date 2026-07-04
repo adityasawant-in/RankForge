@@ -5,9 +5,9 @@ const FONTS = ["Geist Bold", "Geist", "JetBrains Mono", "Inter", "Roboto"];
 
 export default function VideoTitleSection() {
   const { project, updateProject } = useProject();
-  const [openTitle, setOpenTitle] = useState(true);
-  const [openLayout, setOpenLayout] = useState(true);
-  const [openSub, setOpenSub] = useState(true);
+  const [openTitle, setOpenTitle] = useState(false);
+  const [openLayout, setOpenLayout] = useState(false);
+  const [openSub, setOpenSub] = useState(false);
 
   if (!project) return null;
 
