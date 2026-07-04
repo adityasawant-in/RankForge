@@ -26,23 +26,21 @@ export default function MediaLibrarySection() {
     const asset = media.find((m) => m.id === assetId);
     if (!asset) return;
 
+    // 1. Assign media asset synchronously and immediately
+    updateBlock(activeBlockId, {
+      mediaAssetId: assetId,
+      trimStart: 0
+    });
+
+    // 2. Retrieve video duration in the background (non-blocking)
     const video = document.createElement("video");
     video.src = getAssetUrl(asset.url);
+    video.preload = "metadata";
     video.onloadedmetadata = () => {
       const dur = Math.round(video.duration) || 10;
-      updateBlock(activeBlockId, {
-        mediaAssetId: assetId,
-        duration: dur,
-        trimStart: 0
-      });
+      updateBlock(activeBlockId, { duration: dur });
     };
-    video.onerror = () => {
-      updateBlock(activeBlockId, {
-        mediaAssetId: assetId,
-        duration: 10,
-        trimStart: 0
-      });
-    };
+    video.load();
   };
 
   return (

@@ -46,15 +46,18 @@ export default function EditBlockModal({
         // Programmatically fetch duration of imported video
         const tempVideo = document.createElement("video");
         tempVideo.src = getAssetUrl(asset.url);
-        await new Promise<void>((resolve) => {
-          tempVideo.onloadedmetadata = () => {
-            resolve();
-          };
-          tempVideo.onerror = () => {
-            resolve();
-          };
-        });
-        finalDuration = Math.round(tempVideo.duration) || 10;
+        tempVideo.preload = "metadata";
+        
+        await Promise.race([
+          new Promise<void>((resolve) => {
+            tempVideo.onloadedmetadata = () => resolve();
+            tempVideo.onerror = () => resolve();
+            tempVideo.load();
+          }),
+          new Promise<void>((resolve) => setTimeout(resolve, 1500)) // 1.5s fallback timeout
+        ]);
+        
+        finalDuration = tempVideo.duration ? Math.round(tempVideo.duration) : 10;
         finalTrimStart = 0;
       }
 
