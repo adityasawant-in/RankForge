@@ -91,8 +91,16 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background text-on-surface-variant text-sm">
-        Loading RankForge…
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-on-surface gap-4 font-sans select-none">
+        {/* Loading Spinner */}
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 border-4 border-primary/10 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <h2 className="text-base font-bold tracking-widest uppercase text-primary">RankForge</h2>
+          <p className="text-[11px] text-on-surface-variant/60 animate-pulse">Initializing editor workspace...</p>
+        </div>
       </div>
     );
   }
@@ -190,6 +198,11 @@ export default function App() {
           }}
         />
       )}
+      
+      {/* Developer Badge in the bottom-right corner */}
+      <div className="fixed bottom-3 right-3 bg-surface-container/60 backdrop-blur-sm border border-outline/15 text-[10px] font-semibold text-on-surface-variant px-3 py-1 rounded-full z-50 select-none shadow-sm pointer-events-none">
+        Developer: Aditya Sawant
+      </div>
     </div>
   );
 }
