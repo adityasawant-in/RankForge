@@ -31,7 +31,14 @@ export default function Header() {
     setExporting(true);
     try {
       await saveNow();
-      const res = await fetch(`${BASE}/export?projectId=${project.id}`);
+      
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${BASE}/export?projectId=${project.id}`, { headers });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to start export job");
@@ -42,7 +49,7 @@ export default function Header() {
       await new Promise<void>((resolve, reject) => {
         const intervalId = setInterval(async () => {
           try {
-            const statusRes = await fetch(`${BASE}/export/status?jobId=${jobId}`);
+            const statusRes = await fetch(`${BASE}/export/status?jobId=${jobId}`, { headers });
             if (!statusRes.ok) {
               clearInterval(intervalId);
               reject(new Error("Failed to check export status"));
