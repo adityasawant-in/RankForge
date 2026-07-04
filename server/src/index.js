@@ -77,7 +77,15 @@ try {
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use("/uploads", express.static(VIDEO_DATA_DIR));
+app.use("/uploads", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+}, express.static(VIDEO_DATA_DIR));
 
 app.use("/api/auth", authRouter);
 app.use("/api/project", authMiddleware, projectRouter);
@@ -89,6 +97,40 @@ app.use("/api/export", (req, res, next) => {
 }, exportRouter);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
+
+app.get("/api/debug/db", async (req, res) => {
+  try {
+    const username = req.query.username || "Aditya@123";
+    let userId = username;
+    
+    if (process.env.DATABASE_URL) {
+      const pg = await import("pg");
+      const client = new pg.default.Client({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.DATABASE_URL.includes("supabase") ? { rejectUnauthorized: false } : false
+      });
+      await client.connect();
+      try {
+        const userRes = await client.query("SELECT id FROM users WHERE username = $1", [username]);
+        if (userRes.rows.length > 0) {
+          userId = userRes.rows[0].id;
+        }
+      } finally {
+        await client.end();
+      }
+    }
+    
+    const db = await readDb(userId);
+    res.json({
+      userId,
+      media: db.media,
+      projects: db.projects,
+      blocks: db.blocks
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`RankForge API running on http://localhost:${PORT}`));
