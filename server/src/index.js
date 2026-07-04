@@ -101,9 +101,6 @@ app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 app.get("/api/debug/db", async (req, res) => {
   try {
-    const username = req.query.username || "Aditya@123";
-    let userId = username;
-    
     if (process.env.DATABASE_URL) {
       const pg = await import("pg");
       const client = new pg.default.Client({
@@ -112,18 +109,23 @@ app.get("/api/debug/db", async (req, res) => {
       });
       await client.connect();
       try {
-        const userRes = await client.query("SELECT id FROM users WHERE username = $1", [username]);
-        if (userRes.rows.length > 0) {
-          userId = userRes.rows[0].id;
-        }
+        const users = await client.query("SELECT id, username FROM users");
+        const projects = await client.query("SELECT id, name, \"userId\" FROM projects");
+        const blocks = await client.query("SELECT id, \"projectId\", rank, title FROM blocks");
+        const media = await client.query("SELECT id, name, url FROM media");
+        return res.json({
+          users: users.rows,
+          projects: projects.rows,
+          blocks: blocks.rows,
+          media: media.rows
+        });
       } finally {
         await client.end();
       }
     }
-    
-    const db = await readDb(userId);
+    const db = await readDb("Aditya@123");
     res.json({
-      userId,
+      local: true,
       media: db.media,
       projects: db.projects,
       blocks: db.blocks
