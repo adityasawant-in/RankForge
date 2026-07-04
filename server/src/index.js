@@ -3,7 +3,7 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { readDb } from "./db.js";
+import { readDb, acquireLock } from "./db.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import authRouter from "./routes/auth.js";
 import projectRouter from "./routes/project.js";
@@ -89,13 +89,50 @@ app.use("/uploads", (req, res, next) => {
 }, express.static(VIDEO_DATA_DIR));
 
 app.use("/api/auth", authRouter);
-app.use("/api/project", authMiddleware, projectRouter);
-app.use("/api/blocks", authMiddleware, blocksRouter);
-app.use("/api/media", authMiddleware, mediaRouter);
+
+const writeLockMiddleware = async (req, res, next) => {
+  if (!req.user || !req.user.id) return next();
+  
+  const release = await acquireLock(req.user.id);
+  
+  const originalJson = res.json;
+  const originalSend = res.send;
+  const originalEnd = res.end;
+  
+  let released = false;
+  const doRelease = () => {
+    if (!released) {
+      released = true;
+      release();
+    }
+  };
+  
+  res.json = function(...args) {
+    doRelease();
+    return originalJson.apply(this, args);
+  };
+  
+  res.send = function(...args) {
+    doRelease();
+    return originalSend.apply(this, args);
+  };
+  
+  res.end = function(...args) {
+    doRelease();
+    return originalEnd.apply(this, args);
+  };
+  
+  req.on("close", doRelease);
+  next();
+};
+
+app.use("/api/project", authMiddleware, writeLockMiddleware, projectRouter);
+app.use("/api/blocks", authMiddleware, writeLockMiddleware, blocksRouter);
+app.use("/api/media", authMiddleware, writeLockMiddleware, mediaRouter);
 app.use("/api/export", (req, res, next) => {
   if (req.path === "/download") return next();
   return authMiddleware(req, res, next);
-}, exportRouter);
+}, writeLockMiddleware, exportRouter);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 

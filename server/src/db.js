@@ -422,3 +422,18 @@ export async function createUser(username, passwordHash) {
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2));
   return user;
 }
+
+const locks = new Map();
+
+export function acquireLock(userId) {
+  let release;
+  const promise = new Promise((resolve) => {
+    release = resolve;
+  });
+  
+  const current = locks.get(userId) || Promise.resolve();
+  const next = current.then(() => release);
+  locks.set(userId, promise);
+  
+  return current;
+}

@@ -348,12 +348,17 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
       const setptsVal = (1 / speed).toFixed(4);
       const videoFilter = speed !== 1.0 ? `,setpts=${setptsVal}*PTS` : "";
 
-      const drawTextChain = [drawBanners, drawTitle, drawSub, rankOverlayFilters].filter(Boolean).join(",");
+      const drawTextChain = [drawBanners, drawTitle, drawSub, rankOverlayFilters, "tpad=stop_mode=clone:stop=-1"].filter(Boolean).join(",");
       const filterComplex = emojiFilterChain
         ? `[0:v]split[bg][fg];[bg]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=${scaledBlur}:2,scale=720:1280,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v_drawn];${emojiFilterChain}[v]`
         : `[0:v]split[bg][fg];[bg]scale=180:320:force_original_aspect_ratio=increase,crop=180:320,boxblur=${scaledBlur}:2,scale=720:1280,drawbox=color=0x0b0e14@${overlayDarkness}:t=fill${videoFilter}[bg_blurred];[fg]scale=720:920:force_original_aspect_ratio=decrease,setsar=1${videoFilter}[fg_scaled];[bg_blurred][fg_scaled]overlay=(W-w)/2:180+(920-h)/2[base];[base]${drawTextChain}[v]`;
 
-      const audioArgs = speed !== 1.0 ? ["-af", getAtempoFilter(speed)] : [];
+      const audioFilters = [];
+      if (speed !== 1.0) {
+        audioFilters.push(getAtempoFilter(speed));
+      }
+      audioFilters.push("apad");
+      const audioArgs = ["-af", audioFilters.join(",")];
 
       try {
         // Attempt using original audio
@@ -378,7 +383,7 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
           "-ar", "44100",
           "-ac", "2",
           "-r", "30",
-          "-shortest",
+          "-t", String(duration),
           tempOut
         ];
         await runFfmpeg(args);
@@ -394,7 +399,6 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
           "-i", videoPath,
           "-f", "lavfi",
           "-i", "anullsrc=r=44100:cl=stereo",
-          "-t", String(duration),
           "-filter_complex", filterComplex,
           "-map", "[v]",
           "-map", "1:a",
@@ -405,11 +409,10 @@ async function renderSegment({ block, asset, project, blocks, playedRanks, tempO
           "-bf", "0",
           "-pix_fmt", "yuv420p",
           "-c:a", "aac",
-          ...audioArgs,
           "-ar", "44100",
           "-ac", "2",
           "-r", "30",
-          "-shortest",
+          "-t", String(duration),
           tempOut
         ];
         await runFfmpeg(args);
