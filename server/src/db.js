@@ -165,7 +165,8 @@ export async function readDb(userId) {
         client.release();
       }
     } catch (err) {
-      console.error("Postgres read failed, falling back to local JSON:", err.message);
+      console.error("Postgres read failed:", err.message);
+      throw err;
     }
   }
 
@@ -331,7 +332,8 @@ export async function writeDb(data, userId) {
         client.release();
       }
     } catch (err) {
-      console.error("Postgres write failed, falling back to local JSON:", err.message);
+      console.error("Postgres write failed:", err.message);
+      throw err;
     }
   }
 
