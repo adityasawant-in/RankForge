@@ -143,14 +143,14 @@ export default function Timeline({
         updateBlock(blockId, {
           trimStart: Number(newTrimStart.toFixed(2)),
           duration: Number(newDuration.toFixed(2))
-        });
+        }, false);
       } else {
         const rawNewDuration = startDuration + deltaSec;
         const newDuration = Math.max(1, rawNewDuration);
 
         updateBlock(blockId, {
           duration: Number(newDuration.toFixed(2))
-        });
+        }, false);
       }
     };
 
@@ -161,6 +161,9 @@ export default function Timeline({
       targetEl.removeEventListener("pointermove", onPointerMove);
       targetEl.removeEventListener("pointerup", onPointerUp);
       targetEl.removeEventListener("pointercancel", onPointerUp);
+      
+      // Save final state and commit history
+      updateBlock(blockId, {}, true);
     };
 
     targetEl.addEventListener("pointermove", onPointerMove);

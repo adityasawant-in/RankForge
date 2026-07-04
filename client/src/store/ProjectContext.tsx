@@ -23,8 +23,8 @@ interface Ctx {
   register: (username: string, password: string) => Promise<void>;
   logout: () => void;
   updateProject: (patch: Partial<Project>, opts?: { commit?: boolean }) => void;
+  updateBlock: (id: string, patch: Partial<RankingBlock>, commitHistory?: boolean) => void;
   addBlock: () => Promise<void>;
-  updateBlock: (id: string, patch: Partial<RankingBlock>) => void;
   deleteBlock: (id: string) => Promise<void>;
   splitBlock: (blockId: string, splitOffset: number) => Promise<void>;
   moveBlock: (id: string, direction: "up" | "down") => Promise<void>;
@@ -58,6 +58,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef<{ p: Project; b: RankingBlock[] } | null>(null);
 
   const history = useRef<Snapshot[]>([]);
   const historyIndex = useRef(-1);
@@ -206,6 +209,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, logout]);
 
   const persist = useCallback(async (p: Project, b: RankingBlock[]) => {
+    if (isSavingRef.current) {
+      pendingSaveRef.current = { p, b };
+      return;
+    }
+
+    isSavingRef.current = true;
     setSaving(true);
     setSaveError(null);
     try {
@@ -230,7 +239,14 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       console.error("Failed to save changes:", err);
       setSaveError(err.message || "Failed to save changes");
     } finally {
+      isSavingRef.current = false;
       setSaving(false);
+
+      if (pendingSaveRef.current) {
+        const next = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        persist(next.p, next.b);
+      }
     }
   }, []);
 
@@ -256,10 +272,10 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateBlock = useCallback(
-    (id: string, patch: Partial<RankingBlock>) => {
+    (id: string, patch: Partial<RankingBlock>, commitHistory = true) => {
       setBlocks((prev) => {
         const next = prev.map((b) => (b.id === id ? { ...b, ...patch } : b));
-        if (project) scheduleSave(project, next, true);
+        if (project) scheduleSave(project, next, commitHistory);
         return next;
       });
     },
@@ -327,27 +343,25 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Shift ranks and update locally
-      setBlocks((prev) => {
-        const sorted = [...prev].sort((a, b) => a.rank - b.rank);
-        const idx = sorted.findIndex((b) => b.id === blockId);
-        
-        // Update local A
-        sorted[idx] = { ...target, duration: durationA };
+      const sorted = [...blocks].sort((a, b) => a.rank - b.rank);
+      const idx = sorted.findIndex((b) => b.id === blockId);
+      
+      // Update local A
+      sorted[idx] = { ...target, duration: durationA };
 
-        // Increment subsequent ranks
-        for (let i = idx + 1; i < sorted.length; i++) {
-          sorted[i].rank += 1;
-        }
+      // Increment subsequent ranks
+      for (let i = idx + 1; i < sorted.length; i++) {
+        sorted[i] = { ...sorted[i], rank: sorted[i].rank + 1 };
+      }
 
-        // Insert B
-        sorted.splice(idx + 1, 0, created);
+      // Insert B
+      sorted.splice(idx + 1, 0, created);
 
-        // Update ranks order on server
-        api.reorderBlocks(project.id, sorted.map((b) => ({ id: b.id, rank: b.rank })));
-        
-        if (project) scheduleSave(project, sorted, true);
-        return sorted;
-      });
+      // Update ranks order on server
+      await api.reorderBlocks(project.id, sorted.map((b) => ({ id: b.id, rank: b.rank })));
+      
+      setBlocks(sorted);
+      if (project) scheduleSave(project, sorted, true);
     },
     [project, blocks, scheduleSave]
   );
