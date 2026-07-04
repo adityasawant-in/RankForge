@@ -22,7 +22,26 @@ export default function MediaLibrarySection() {
 
   const assign = (assetId: string) => {
     if (!selectedBlockId) return;
-    updateBlock(selectedBlockId, { mediaAssetId: assetId });
+    const asset = media.find((m) => m.id === assetId);
+    if (!asset) return;
+
+    const video = document.createElement("video");
+    video.src = getAssetUrl(asset.url);
+    video.onloadedmetadata = () => {
+      const dur = Math.round(video.duration) || 10;
+      updateBlock(selectedBlockId, {
+        mediaAssetId: assetId,
+        duration: dur,
+        trimStart: 0
+      });
+    };
+    video.onerror = () => {
+      updateBlock(selectedBlockId, {
+        mediaAssetId: assetId,
+        duration: 10,
+        trimStart: 0
+      });
+    };
   };
 
   return (

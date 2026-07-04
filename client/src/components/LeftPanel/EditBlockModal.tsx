@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { RankingBlock } from "../../types";
 import { useProject } from "../../store/ProjectContext";
+import { getAssetUrl } from "../../api";
 
 export default function EditBlockModal({
   block,
@@ -29,6 +30,8 @@ export default function EditBlockModal({
     try {
       let mediaAssetId = block.mediaAssetId;
       let finalTitle = title.trim();
+      let finalDuration = Number(duration) || 10;
+      let finalTrimStart = Number(trimStart) || 0;
 
       if (videoUrl.trim()) {
         // Call import endpoint
@@ -39,6 +42,20 @@ export default function EditBlockModal({
         if (!finalTitle || finalTitle === `Ranking Block #${block.rank}`) {
           finalTitle = asset.name;
         }
+
+        // Programmatically fetch duration of imported video
+        const tempVideo = document.createElement("video");
+        tempVideo.src = getAssetUrl(asset.url);
+        await new Promise<void>((resolve) => {
+          tempVideo.onloadedmetadata = () => {
+            resolve();
+          };
+          tempVideo.onerror = () => {
+            resolve();
+          };
+        });
+        finalDuration = Math.round(tempVideo.duration) || 10;
+        finalTrimStart = 0;
       }
 
       if (!finalTitle) {
@@ -47,10 +64,10 @@ export default function EditBlockModal({
 
       updateBlock(block.id, {
         title: finalTitle,
-        duration: Number(duration) || 10,
+        duration: finalDuration,
         mediaAssetId,
         playbackSpeed,
-        trimStart: Number(trimStart) || 0,
+        trimStart: finalTrimStart,
         transitionType,
         transitionDuration: Number(transitionDuration) || 0.5
       });

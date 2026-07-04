@@ -378,17 +378,6 @@ export default function PreviewCanvas({
                   const video = e.currentTarget;
                   const videoDuration = video.duration || 0;
                   const speed = current?.block?.playbackSpeed || 1.0;
-                  
-                  if (videoDuration > 0 && current?.block) {
-                    const roundedDuration = Math.round(videoDuration / speed);
-                    if (syncedDurationsRef.current[current.block.id] !== asset.id) {
-                      syncedDurationsRef.current[current.block.id] = asset.id;
-                      updateBlock(current.block.id, {
-                        duration: roundedDuration,
-                        trimStart: 0
-                      });
-                    }
-                  }
 
                   const timeInSeg = playhead - (current?.start || 0);
                   const expectedTime = videoDuration > 0 ? Math.min(videoDuration - 0.05, Math.max(0, timeInSeg * speed)) : timeInSeg * speed;
