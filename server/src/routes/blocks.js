@@ -47,29 +47,6 @@ router.post("/", async (req, res) => {
   res.status(201).json(savedBlock || block);
 });
 
-router.put("/:id", async (req, res) => {
-  const db = await readDb(req.user.id);
-  const idx = db.blocks.findIndex((b) => b.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: "Block not found" });
-  const projectId = db.blocks[idx].projectId;
-  db.blocks[idx] = { ...db.blocks[idx], ...req.body, id: db.blocks[idx].id };
-  normalizeRanks(db, projectId);
-  await writeDb(db, req.user.id);
-  const updatedBlock = db.blocks.find((b) => b.id === req.params.id);
-  res.json(updatedBlock || db.blocks[idx]);
-});
-
-router.delete("/:id", async (req, res) => {
-  const db = await readDb(req.user.id);
-  const block = db.blocks.find(b => b.id === req.params.id);
-  if (!block) return res.status(404).json({ error: "Block not found" });
-  const { projectId } = block;
-  db.blocks = db.blocks.filter((b) => b.id !== req.params.id);
-  normalizeRanks(db, projectId);
-  await writeDb(db, req.user.id);
-  res.status(204).end();
-});
-
 // PUT bulk update blocks
 router.put("/bulk", async (req, res) => {
   const db = await readDb(req.user.id);
@@ -97,6 +74,29 @@ router.put("/bulk", async (req, res) => {
     await writeDb(db, req.user.id);
   }
   res.json({ ok: true });
+});
+
+router.put("/:id", async (req, res) => {
+  const db = await readDb(req.user.id);
+  const idx = db.blocks.findIndex((b) => b.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Block not found" });
+  const projectId = db.blocks[idx].projectId;
+  db.blocks[idx] = { ...db.blocks[idx], ...req.body, id: db.blocks[idx].id };
+  normalizeRanks(db, projectId);
+  await writeDb(db, req.user.id);
+  const updatedBlock = db.blocks.find((b) => b.id === req.params.id);
+  res.json(updatedBlock || db.blocks[idx]);
+});
+
+router.delete("/:id", async (req, res) => {
+  const db = await readDb(req.user.id);
+  const block = db.blocks.find(b => b.id === req.params.id);
+  if (!block) return res.status(404).json({ error: "Block not found" });
+  const { projectId } = block;
+  db.blocks = db.blocks.filter((b) => b.id !== req.params.id);
+  normalizeRanks(db, projectId);
+  await writeDb(db, req.user.id);
+  res.status(204).end();
 });
 
 // bulk reorder: [{id, rank}, ...]
