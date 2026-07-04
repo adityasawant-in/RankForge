@@ -119,7 +119,7 @@ export default function Header() {
         
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-[11px] text-on-surface-variant font-mono w-16 hidden lg:block text-right">{saving ? "Saving…" : "Saved"}</span>
-          <div className="hidden sm:flex items-center bg-surface-container rounded-lg p-1 border border-outline/30">
+          <div className="flex items-center bg-surface-container rounded-lg p-0.5 sm:p-1 border border-outline/30">
             <button
               disabled={!canUndo}
               onClick={undo}

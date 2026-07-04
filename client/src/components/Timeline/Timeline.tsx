@@ -81,17 +81,19 @@ export default function Timeline({
     document.addEventListener("pointerup", onPointerUp, { passive: false });
   };
 
-  const handleSplit = async () => {
-    const activeSeg = segments.find(
-      (s) => playhead >= s.start && playhead < s.start + s.duration
-    );
-    if (!activeSeg || activeSeg.type !== "rank" || !activeSeg.block) {
-      return;
-    }
+  const activeSeg = useMemo(() => {
+    return segments.find((s) => playhead >= s.start && playhead < s.start + s.duration);
+  }, [segments, playhead]);
+
+  const canSplit = useMemo(() => {
+    if (!activeSeg || activeSeg.type !== "rank" || !activeSeg.block) return false;
     const splitOffset = playhead - activeSeg.start;
-    if (splitOffset < 0.2 || splitOffset > activeSeg.duration - 0.2) {
-      return;
-    }
+    return splitOffset >= 0.2 && splitOffset <= activeSeg.duration - 0.2;
+  }, [activeSeg, playhead]);
+
+  const handleSplit = async () => {
+    if (!canSplit || !activeSeg || !activeSeg.block) return;
+    const splitOffset = playhead - activeSeg.start;
     await splitBlock(activeSeg.block.id, splitOffset);
   };
 
@@ -180,7 +182,8 @@ export default function Timeline({
           <div className="flex items-center gap-1.5 border-r border-outline/10 pr-4">
             <button
               onClick={handleSplit}
-              className="px-2.5 py-1 bg-surface border border-outline/20 hover:border-outline/50 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 hover:bg-surface-variant"
+              disabled={!canSplit}
+              className="px-2.5 py-1 bg-surface border border-outline/20 hover:border-outline/50 text-white disabled:opacity-30 disabled:pointer-events-none rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all active:scale-95 hover:bg-surface-variant"
               title="Split active clip at playhead"
             >
               <span className="material-symbols-outlined text-xs text-primary font-bold">content_cut</span>
