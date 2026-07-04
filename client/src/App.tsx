@@ -2,16 +2,21 @@ import Header from "./components/Header";
 import LeftPanel from "./components/LeftPanel/LeftPanel";
 import PreviewCanvas from "./components/Canvas/PreviewCanvas";
 import Timeline from "./components/Timeline/Timeline";
+import AuthScreen from "./components/Auth/AuthScreen";
 import { useProject } from "./store/ProjectContext";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { buildSegments, totalDuration } from "./utils/timeline";
 import { getAssetUrl } from "./api";
 
 export default function App() {
-  const { loading, project, media, blocks } = useProject();
+  const { loading, project, media, blocks, isAuthenticated } = useProject();
   const [playhead, setPlayhead] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [leftPanelWidth, setLeftPanelWidth] = useState(360);
+
+  if (!isAuthenticated) {
+    return <AuthScreen />;
+  }
 
   const handleDragPanelStart = (e: React.PointerEvent) => {
     e.preventDefault();

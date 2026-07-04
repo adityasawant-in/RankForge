@@ -9,13 +9,13 @@ const router = Router();
 
 // GET all projects
 router.get("/list", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   res.json(db.projects || []);
 });
 
 // GET single project
 router.get("/:id", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   const p = (db.projects || []).find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: "Project not found" });
   res.json(p);
@@ -23,12 +23,13 @@ router.get("/:id", async (req, res) => {
 
 // POST create new project
 router.post("/", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   if (!db.projects) db.projects = [];
   
   const newProject = {
     id: "project-" + nanoid(8),
     name: req.body.name || "New Video Project",
+    userId: req.user.id,
     videoTitle: "Ranking Best Unexpected Moments",
     titleFont: "Roboto",
     titleFontSize: 32,
@@ -55,13 +56,13 @@ router.post("/", async (req, res) => {
   };
   
   db.projects.push(newProject);
-  await writeDb(db);
+  await writeDb(db, req.user.id);
   res.status(201).json(newProject);
 });
 
 // PUT update project
 router.put("/:id", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   if (!db.projects) db.projects = [];
   const idx = db.projects.findIndex((x) => x.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Project not found" });
@@ -72,13 +73,13 @@ router.put("/:id", async (req, res) => {
     id: db.projects[idx].id,
     updatedAt: Date.now()
   };
-  await writeDb(db);
+  await writeDb(db, req.user.id);
   res.json(db.projects[idx]);
 });
 
 // DELETE project
 router.delete("/:id", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   if (!db.projects) db.projects = [];
   
   // Find all blocks for this project
@@ -132,7 +133,7 @@ router.delete("/:id", async (req, res) => {
   db.projects = db.projects.filter((x) => x.id !== req.params.id);
   db.blocks = db.blocks.filter((b) => b.projectId !== req.params.id);
   
-  await writeDb(db);
+  await writeDb(db, req.user.id);
   res.status(204).end();
 });
 

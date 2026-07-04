@@ -16,6 +16,11 @@ interface Ctx {
   saving: boolean;
   canUndo: boolean;
   canRedo: boolean;
+  isAuthenticated: boolean;
+  username: string | null;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
+  logout: () => void;
   updateProject: (patch: Partial<Project>, opts?: { commit?: boolean }) => void;
   addBlock: () => Promise<void>;
   updateBlock: (id: string, patch: Partial<RankingBlock>) => void;
@@ -43,6 +48,8 @@ export function useProject() {
 }
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("auth_token"));
+  const [username, setUsername] = useState<string | null>(localStorage.getItem("username"));
   const [project, setProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [blocks, setBlocks] = useState<RankingBlock[]>([]);
@@ -54,6 +61,36 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const historyIndex = useRef(-1);
   const [historyTick, setHistoryTick] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("activeProjectId");
+    setUsername(null);
+    setIsAuthenticated(false);
+    setProject(null);
+    setProjects([]);
+    setBlocks([]);
+    setMedia([]);
+    history.current = [];
+    historyIndex.current = -1;
+  }, []);
+
+  const login = useCallback(async (u: string, p: string) => {
+    const res = await api.login(u, p);
+    localStorage.setItem("auth_token", res.token);
+    localStorage.setItem("username", res.username);
+    setUsername(res.username);
+    setIsAuthenticated(true);
+  }, []);
+
+  const register = useCallback(async (u: string, p: string) => {
+    const res = await api.register(u, p);
+    localStorage.setItem("auth_token", res.token);
+    localStorage.setItem("username", res.username);
+    setUsername(res.username);
+    setIsAuthenticated(true);
+  }, []);
 
   const pushHistory = useCallback((snap: Snapshot) => {
     const truncated = history.current.slice(0, historyIndex.current + 1);
@@ -124,6 +161,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   }, [project, createNewProject, selectProject]);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
     (async () => {
       try {
         let list = await api.getProjectsList();
@@ -147,13 +190,17 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
 
         history.current = [{ project: activeProj, blocks: b }];
         historyIndex.current = 0;
-      } catch (err) {
+      } catch (err: any) {
         console.error("Initialization failed:", err);
+        const msg = err.message || "";
+        if (msg.includes("401") || msg.toLowerCase().includes("unauthorized") || msg.toLowerCase().includes("token")) {
+          logout();
+        }
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [isAuthenticated, logout]);
 
   const persist = useCallback(async (p: Project, b: RankingBlock[]) => {
     setSaving(true);
@@ -397,6 +444,11 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     saving,
     canUndo: historyIndex.current > 0,
     canRedo: historyIndex.current < history.current.length - 1,
+    isAuthenticated,
+    username,
+    login,
+    register,
+    logout,
     updateProject,
     addBlock,
     updateBlock,

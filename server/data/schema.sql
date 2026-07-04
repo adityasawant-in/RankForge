@@ -5,6 +5,14 @@ DROP TABLE IF EXISTS media CASCADE;
 DROP TABLE IF EXISTS blocks CASCADE;
 DROP TABLE IF EXISTS projects CASCADE;
 
+-- Create Users Table
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(255) PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  "passwordHash" VARCHAR(255) NOT NULL,
+  "createdAt" BIGINT NOT NULL
+);
+
 -- Create Projects Table
 CREATE TABLE projects (
   id VARCHAR(255) PRIMARY KEY,
@@ -35,7 +43,8 @@ CREATE TABLE projects (
   "rankListFontSize" INTEGER DEFAULT 36,
   "shuffleBlocks" BOOLEAN DEFAULT FALSE,
   "createdAt" BIGINT NOT NULL,
-  "updatedAt" BIGINT NOT NULL
+  "updatedAt" BIGINT NOT NULL,
+  "userId" VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Create Blocks Table
@@ -60,7 +69,8 @@ CREATE TABLE media (
   type VARCHAR(50) NOT NULL,
   url TEXT NOT NULL,
   mimetype VARCHAR(100) NOT NULL,
-  "createdAt" BIGINT NOT NULL
+  "createdAt" BIGINT NOT NULL,
+  "userId" VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Insert Default Project seed

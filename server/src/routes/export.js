@@ -655,7 +655,7 @@ async function runExportInBackground(jobId, projectId, project, db) {
 router.get("/", async (req, res) => {
   try {
     console.log(`[EXPORT] Received export request for projectId: ${req.query.projectId}`);
-    const db = await readDb();
+    const db = await readDb(req.user.id);
     const { projectId } = req.query;
     if (!projectId) return res.status(400).json({ error: "projectId is required" });
     

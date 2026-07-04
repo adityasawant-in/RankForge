@@ -296,13 +296,13 @@ function getVideoTitle(url) {
 }
 
 router.get("/", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   res.json(db.media);
 });
 
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    const db = await readDb();
+    const db = await readDb(req.user.id);
     const isAudio = req.file.mimetype.startsWith("audio");
     let assetUrl = `/uploads/${req.file.filename}`;
 
@@ -320,10 +320,11 @@ router.post("/upload", upload.single("file"), async (req, res) => {
       type: isAudio ? "audio" : "video",
       url: assetUrl,
       mimetype: req.file.mimetype,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      userId: req.user.id
     };
     db.media.push(asset);
-    await writeDb(db);
+    await writeDb(db, req.user.id);
     res.status(201).json(asset);
   } catch (err) {
     console.error("Upload error:", err);
@@ -346,7 +347,7 @@ router.post("/import-url", async (req, res) => {
       throw new Error("Downloaded file was not found on disk");
     }
 
-    const db = await readDb();
+    const db = await readDb(req.user.id);
     let assetUrl = `/uploads/${filename}`;
 
     // Upload to Supabase Storage if configured
@@ -363,10 +364,11 @@ router.post("/import-url", async (req, res) => {
       type: "video",
       url: assetUrl,
       mimetype: "video/mp4",
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      userId: req.user.id
     };
     db.media.push(asset);
-    await writeDb(db);
+    await writeDb(db, req.user.id);
 
     res.status(201).json(asset);
   } catch (err) {
@@ -376,7 +378,7 @@ router.post("/import-url", async (req, res) => {
 });
 
 router.delete("/:id", async (req, res) => {
-  const db = await readDb();
+  const db = await readDb(req.user.id);
   const asset = db.media.find((m) => m.id === req.params.id);
   if (asset) {
     if (asset.url.startsWith("http")) {
@@ -395,7 +397,7 @@ router.delete("/:id", async (req, res) => {
       if (p.backgroundMusicId === req.params.id) p.backgroundMusicId = null;
     });
   }
-  await writeDb(db);
+  await writeDb(db, req.user.id);
   res.status(204).end();
 });
 

@@ -3,6 +3,8 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import authMiddleware from "./middleware/authMiddleware.js";
+import authRouter from "./routes/auth.js";
 import projectRouter from "./routes/project.js";
 import blocksRouter from "./routes/blocks.js";
 import mediaRouter from "./routes/media.js";
@@ -77,10 +79,14 @@ app.use(cors());
 app.use(express.json());
 app.use("/uploads", express.static(VIDEO_DATA_DIR));
 
-app.use("/api/project", projectRouter);
-app.use("/api/blocks", blocksRouter);
-app.use("/api/media", mediaRouter);
-app.use("/api/export", exportRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/project", authMiddleware, projectRouter);
+app.use("/api/blocks", authMiddleware, blocksRouter);
+app.use("/api/media", authMiddleware, mediaRouter);
+app.use("/api/export", (req, res, next) => {
+  if (req.path === "/download") return next();
+  return authMiddleware(req, res, next);
+}, exportRouter);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 

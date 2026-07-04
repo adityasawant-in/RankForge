@@ -3,8 +3,18 @@ import { MediaAsset, Project, RankingBlock } from "./types";
 export const BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "") || "/api";
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem("auth_token");
+  const headers: HeadersInit = {};
+  
+  if (!(options?.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${BASE}${path}`, {
-    headers: options?.body instanceof FormData ? undefined : { "Content-Type": "application/json" },
+    headers,
     ...options
   });
   if (!res.ok) {
@@ -20,6 +30,8 @@ async function req<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  login: (username: string, password: string) => req<{ token: string; username: string }>("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) }),
+  register: (username: string, password: string) => req<{ token: string; username: string }>("/auth/register", { method: "POST", body: JSON.stringify({ username, password }) }),
   getProjectsList: () => req<Project[]>("/project/list"),
   getProject: (id: string) => req<Project>(`/project/${id}`),
   createProject: (name?: string) => req<Project>("/project", { method: "POST", body: JSON.stringify({ name }) }),

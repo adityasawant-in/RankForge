@@ -15,7 +15,9 @@ export default function Header() {
     canRedo,
     selectProject,
     createNewProject,
-    deleteProject
+    deleteProject,
+    logout,
+    username
   } = useProject();
   
   const [exporting, setExporting] = useState(false);
@@ -163,6 +165,20 @@ export default function Header() {
           </button>
           <div className="w-8 h-8 rounded-full bg-surface-variant border border-outline/50 flex items-center justify-center text-xs hidden md:flex">
             🧑
+          </div>
+
+          <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-outline/25">
+            <span className="text-[10px] sm:text-xs font-bold text-white/60 hidden xs:inline max-w-[80px] truncate" title={username || ""}>
+              {username}
+            </span>
+            <button
+              type="button"
+              onClick={logout}
+              className="p-1.5 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant hover:text-white transition-colors flex items-center justify-center"
+              title="Logout"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+            </button>
           </div>
         </div>
       </header>
