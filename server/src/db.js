@@ -15,6 +15,42 @@ if (process.env.DATABASE_URL) {
       ? { rejectUnauthorized: false }
       : false
   });
+
+  // Run automatic database schema migration
+  (async () => {
+    try {
+      const client = await pool.connect();
+      try {
+        console.log("[DB] Running automatic database migrations...");
+        
+        // 1. Create users table
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id VARCHAR(255) PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            "passwordHash" VARCHAR(255) NOT NULL,
+            "createdAt" BIGINT NOT NULL
+          )
+        `);
+
+        // 2. Add userId to projects
+        await client.query(`
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS "userId" VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE
+        `);
+
+        // 3. Add userId to media
+        await client.query(`
+          ALTER TABLE media ADD COLUMN IF NOT EXISTS "userId" VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE
+        `);
+        
+        console.log("[DB] Automatic migrations completed successfully!");
+      } finally {
+        client.release();
+      }
+    } catch (err) {
+      console.error("[DB] Automatic migrations failed:", err.message);
+    }
+  })();
 }
 
 function defaultData() {
