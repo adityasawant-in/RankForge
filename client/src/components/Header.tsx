@@ -167,8 +167,8 @@ export default function Header() {
             🧑
           </div>
 
-          <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-outline/25">
-            <span className="text-[10px] sm:text-xs font-bold text-white/60 hidden xs:inline max-w-[80px] truncate" title={username || ""}>
+          <div className="flex items-center gap-1.5 pl-2 sm:pl-3 border-l border-outline/25 shrink-0">
+            <span className="text-[10px] sm:text-xs font-bold text-primary max-w-[80px] truncate" title={username || ""}>
               {username}
             </span>
             <button
